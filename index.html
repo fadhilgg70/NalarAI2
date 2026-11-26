@@ -1,0 +1,3385 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>NalarAI — Asisten AI Berpikir Kritis &amp; Analisis Mendalam</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Marked, KaTeX & JSZip -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+  <style>
+    :root {
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--font-sans);
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      height: 100dvh;
+    }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.45); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.75); }
+
+    /* Markdown Typography - Large & Readable */
+    .markdown-body {
+      font-size: 16.5px;
+      line-height: 1.78;
+      word-break: break-word;
+    }
+    @media (max-width: 640px) {
+      .markdown-body {
+        font-size: 16px;
+        line-height: 1.74;
+      }
+    }
+    .markdown-body p { margin-bottom: 0.9em; }
+    .markdown-body p:last-child { margin-bottom: 0; }
+    .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+      font-weight: 700;
+      margin-top: 1.25em;
+      margin-bottom: 0.5em;
+      line-height: 1.35;
+    }
+    .markdown-body h1 { font-size: 1.35em; }
+    .markdown-body h2 { font-size: 1.2em; border-bottom: 1px solid rgba(148, 163, 184, 0.25); padding-bottom: 0.25em; }
+    .markdown-body h3 { font-size: 1.08em; }
+    .markdown-body ul, .markdown-body ol {
+      margin-left: 1.4em;
+      margin-bottom: 0.95em;
+    }
+    .markdown-body ul { list-style-type: disc; }
+    .markdown-body ol { list-style-type: decimal; }
+    .markdown-body li { margin-bottom: 0.35em; }
+    .markdown-body strong { font-weight: 600; }
+    .markdown-body blockquote {
+      border-left: 3.5px solid #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+      padding: 0.65em 1em;
+      margin: 0.9em 0;
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+    .markdown-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+      font-size: 0.94em;
+      display: block;
+      overflow-x: auto;
+    }
+    .markdown-body th, .markdown-body td {
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      padding: 0.55em 0.8em;
+      text-align: left;
+    }
+    .markdown-body th {
+      background: rgba(148, 163, 184, 0.14);
+      font-weight: 600;
+    }
+    .markdown-body code:not(pre code) {
+      font-family: var(--font-mono);
+      background: rgba(148, 163, 184, 0.18);
+      color: #f43f5e;
+      padding: 0.15em 0.4em;
+      border-radius: 0.35rem;
+      font-size: 0.88em;
+    }
+    html:not(.dark) .markdown-body code:not(pre code) {
+      color: #be123c;
+    }
+    .code-block-wrapper {
+      position: relative;
+      margin: 1em 0;
+      border-radius: 0.75rem;
+      overflow: hidden;
+      background: #090d16;
+      border: 1px solid #1e293b;
+    }
+    .code-block-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.45rem 0.85rem;
+      background: #131b2e;
+      color: #94a3b8;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+    }
+    .code-block-wrapper pre {
+      margin: 0;
+      padding: 0.9rem 1rem;
+      overflow-x: auto;
+      color: #f8fafc;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      line-height: 1.6;
+    }
+
+    /* Floating Edge Pill Dock */
+    #edge-pill-dock {
+      position: fixed;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 45;
+      background: rgba(24, 24, 27, 0.92);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 9999px;
+      padding: 8px 6px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 9px;
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.2s ease;
+      touch-action: none;
+      user-select: none;
+    }
+    #edge-pill-dock.collapsed {
+      transform: translate(calc(100% - 16px), -50%);
+      opacity: 0.82;
+    }
+    #edge-pill-dock.collapsed:hover {
+      opacity: 1;
+    }
+    .squircle-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      cursor: pointer;
+      transition: transform 0.15s ease, filter 0.15s ease;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
+      border: none;
+      position: relative;
+    }
+    .squircle-btn:active {
+      transform: scale(0.91);
+    }
+
+    /* Lens Corner Brackets */
+    .lens-bracket {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-color: #ffffff;
+      border-style: solid;
+      pointer-events: none;
+      filter: drop-shadow(0 1px 3px rgba(0,0,0,0.65));
+    }
+    .lens-tl { top: -2px; left: -2px; border-width: 3.5px 0 0 3.5px; border-top-left-radius: 8px; }
+    .lens-tr { top: -2px; right: -2px; border-width: 3.5px 3.5px 0 0; border-top-right-radius: 8px; }
+    .lens-bl { bottom: -2px; left: -2px; border-width: 0 0 3.5px 3.5px; border-bottom-left-radius: 8px; }
+    .lens-br { bottom: -2px; right: -2px; border-width: 0 3.5px 3.5px 0; border-bottom-right-radius: 8px; }
+
+    @keyframes pulseDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .dot-pulse span {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #3b82f6;
+      animation: pulseDot 1.3s infinite ease-in-out both;
+    }
+    .dot-pulse span:nth-child(1) { animation-delay: -0.32s; }
+    .dot-pulse span:nth-child(2) { animation-delay: -0.16s; }
+  </style>
+</head>
+<body class="flex flex-col h-[100dvh] bg-slate-50 dark:bg-[#0b101b] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+
+  <!-- Toast Notification -->
+  <div id="toast-box" class="fixed top-16 left-1/2 -translate-x-1/2 z-[100] pointer-events-none transition-all duration-200 opacity-0 -translate-y-2">
+    <div id="toast-content" class="bg-slate-900/95 text-white text-sm font-medium px-4 py-2.5 rounded-2xl shadow-xl border border-slate-700/80 flex items-center gap-2.5 max-w-[90vw]">
+      <span id="toast-icon"></span>
+      <span id="toast-text"></span>
+    </div>
+  </div>
+
+  <!-- Sidebar Drawer Backdrop -->
+  <div id="sidebar-backdrop" onclick="toggleSidebar(false)" class="fixed inset-0 bg-slate-950/60 backdrop-blur-[1px] z-40 hidden"></div>
+
+  <!-- Structured History Sidebar -->
+  <aside id="history-sidebar" class="fixed inset-y-0 left-0 w-80 max-w-[86vw] bg-white dark:bg-[#0f1624] border-r border-slate-200 dark:border-slate-800 z-50 transform -translate-x-full transition-transform duration-250 ease-out flex flex-col shadow-2xl">
+    <div class="p-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">N</div>
+        <div>
+          <h2 class="font-bold text-slate-900 dark:text-white text-sm leading-tight">Riwayat Chat</h2>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400">Tersimpan permanen di perangkat</p>
+        </div>
+      </div>
+      <button onclick="toggleSidebar(false)" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800" title="Tutup">
+        <span data-icon="x"></span>
+      </button>
+    </div>
+
+    <div class="p-3 space-y-2 border-b border-slate-100 dark:border-slate-800">
+      <button onclick="createNewSession(); toggleSidebar(false);" class="w-full py-2.5 px-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition">
+        <span data-icon="plus"></span>
+        <span>Percakapan Baru</span>
+      </button>
+
+      <div class="relative">
+        <span data-icon="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></span>
+        <input id="history-search-input" type="text" oninput="renderHistoryList()" placeholder="Cari judul atau isi chat..." class="w-full pl-9 pr-3 py-2 text-xs bg-slate-100 dark:bg-slate-800/90 text-slate-900 dark:text-slate-100 border border-transparent focus:border-blue-500 rounded-xl outline-none transition" />
+      </div>
+
+      <div class="flex items-center gap-1.5">
+        <button id="filter-all-btn" onclick="setHistoryFilter('all')" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">Semua</button>
+        <button id="filter-pinned-btn" onclick="setHistoryFilter('pinned')" class="flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">Disematkan</button>
+      </div>
+    </div>
+
+    <!-- Grouped History Items -->
+    <div id="history-list-container" class="flex-1 overflow-y-auto p-2.5 space-y-3"></div>
+
+    <!-- Backup / Restore Footer -->
+    <div class="p-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/60 space-y-2">
+      <div class="flex gap-1.5">
+        <button onclick="exportHistoryJSON()" class="flex-1 py-1.5 px-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5">
+          <span data-icon="download"></span>
+          <span>Cadangkan</span>
+        </button>
+        <label class="flex-1 py-1.5 px-2.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 cursor-pointer">
+          <span data-icon="upload"></span>
+          <span>Pulihkan</span>
+          <input type="file" accept=".json" onchange="importHistoryJSON(event)" class="hidden" />
+        </label>
+      </div>
+      <button onclick="openSettingsModal(); toggleSidebar(false);" class="w-full py-2 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-medium flex items-center justify-center gap-1.5">
+        <span data-icon="key"></span>
+        <span>Atur API Key Gemini</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Top Compact Header -->
+  <header class="bg-white/95 dark:bg-[#0f1624]/95 backdrop-blur border-b border-slate-200/90 dark:border-slate-800/90 z-30 shrink-0">
+    <div class="max-w-6xl mx-auto px-3 sm:px-5 py-2 flex flex-wrap items-center justify-between gap-2">
+      <!-- Left: History Button + Brand -->
+      <div class="flex items-center gap-2">
+        <button onclick="toggleSidebar(true)" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition" title="Buka Riwayat Chat">
+          <span data-icon="history"></span>
+          <span class="hidden sm:inline">Riwayat</span>
+          <span id="history-count-badge" class="px-1.5 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/70 text-blue-700 dark:text-blue-300 text-[11px] font-bold">0</span>
+        </button>
+
+        <div class="flex items-center gap-1.5">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">N</div>
+          <span class="font-bold text-slate-900 dark:text-white text-sm sm:text-base tracking-tight">NalarAI</span>
+        </div>
+      </div>
+
+      <!-- Center: Mode Switcher -->
+      <div class="flex items-center bg-slate-100 dark:bg-slate-800/90 p-1 rounded-xl border border-slate-200/70 dark:border-slate-700/70">
+        <button id="mode-critical-btn" onclick="setMode('critical')" class="px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm transition">
+          Mode Kritis &amp; Deep Search
+        </button>
+        <button id="mode-fast-btn" onclick="setMode('fast')" class="px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+          Mode Cepat (Harian)
+        </button>
+      </div>
+
+      <!-- Right: Category + Convert + Lens + Theme + Settings -->
+      <div class="flex items-center gap-1.5">
+        <select id="category-select" onchange="state.category = this.value" class="px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-200/60 dark:border-slate-700 outline-none cursor-pointer">
+          <option value="Umum">Kategori: Umum</option>
+          <option value="Sains & Matematika">Sains &amp; Matematika</option>
+          <option value="Koding & Logika">Koding &amp; Logika</option>
+          <option value="Riset & Analisis">Riset &amp; Analisis</option>
+          <option value="Produktivitas Harian">Produktivitas Harian</option>
+        </select>
+
+        <button onclick="openConverterModal('html2apk')" class="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Studio Konversi File (HTML/ZIP ke APK, Gambar, Dokumen)">
+          <span data-icon="smartphone"></span>
+          <span class="hidden sm:inline">Convert File</span>
+        </button>
+
+        <button onclick="openLensModal('camera')" class="px-2.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition" title="Buka Pop-Up Nalar Lens">
+          <span data-icon="scan"></span>
+          <span class="hidden md:inline">Nalar Lens</span>
+        </button>
+
+        <button onclick="toggleTheme()" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition" title="Ganti Tema Terang / Gelap">
+          <span id="theme-icon" data-icon="sun"></span>
+        </button>
+
+        <button onclick="openSettingsModal()" id="api-status-btn" class="p-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition relative" title="Pengaturan API Key">
+          <span data-icon="settings"></span>
+          <span id="api-dot" class="w-2 h-2 rounded-full bg-amber-500 absolute top-1 right-1"></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Large Chat Area -->
+  <main id="chat-scroll-area" class="flex-1 overflow-y-auto px-3 sm:px-6 py-4 sm:py-6 scroll-smooth">
+    <div id="chat-container" class="max-w-5xl mx-auto space-y-5 pb-4">
+      <!-- Clean Welcome Screen or Messages Rendered Here -->
+    </div>
+  </main>
+
+  <!-- Compact Bottom Input Bar -->
+  <footer class="bg-white dark:bg-[#0f1624] border-t border-slate-200/90 dark:border-slate-800/90 px-3 sm:px-6 py-2.5 sm:py-3 shrink-0 z-20">
+    <div class="max-w-5xl mx-auto">
+      <!-- Attached Files, ZIP & Images Preview Strip -->
+      <div id="attachments-preview" class="hidden flex-wrap gap-2 mb-2 p-2 bg-slate-50 dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700"></div>
+
+      <!-- Optional Long Context Panel -->
+      <div id="context-panel" class="hidden mb-2">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Konteks Tambahan / Teks Artikel / Kode Panjang:</span>
+          <button onclick="toggleContextPanel(false)" class="text-xs text-slate-400 hover:text-slate-700 dark:hover:text-white">Tutup</button>
+        </div>
+        <textarea id="long-context-input" rows="3" placeholder="Tempel teks bacaan panjang, data tabel, atau kode sumber di sini..." class="w-full p-2.5 text-sm bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-700 rounded-xl focus:border-blue-500 outline-none resize-y"></textarea>
+      </div>
+
+      <!-- Input Box -->
+      <div class="bg-slate-50 dark:bg-slate-900/90 border border-slate-300/90 dark:border-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/15 rounded-2xl p-2 sm:p-2.5 shadow-sm transition">
+        <textarea
+          id="user-prompt-input"
+          rows="2"
+          placeholder="Tanyakan apa saja, atau unggah foto soal / file / ZIP untuk dianalisis kritis..."
+          onkeydown="handleInputKeydown(event)"
+          class="w-full bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 text-base leading-relaxed px-1.5 py-0.5 outline-none resize-none max-h-40"
+        ></textarea>
+
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1.5 mt-1 border-t border-slate-200/70 dark:border-slate-800">
+          <!-- Left Action Buttons -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button onclick="openLensModal('screen')" class="px-2.5 py-1.5 rounded-xl bg-blue-50 dark:bg-blue-950/70 hover:bg-blue-100 dark:hover:bg-blue-900/70 text-blue-700 dark:text-blue-300 text-xs font-semibold flex items-center gap-1.5 border border-blue-200/70 dark:border-blue-800/70 transition">
+              <span data-icon="scan"></span>
+              <span>Scan Layar</span>
+            </button>
+
+            <label class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 cursor-pointer transition">
+              <span data-icon="image"></span>
+              <span>Foto Soal</span>
+              <input id="photo-upload-input" type="file" accept="image/*" multiple onchange="handlePhotoSelect(event)" class="hidden" />
+            </label>
+
+            <label class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium flex items-center gap-1.5 border border-slate-200 dark:border-slate-700 cursor-pointer transition">
+              <span data-icon="paperclip"></span>
+              <span>File / ZIP</span>
+              <input id="file-upload-input" type="file" accept=".zip,.pdf,.txt,.md,.csv,.json,.py,.js,.html,.css,.cpp,.java,.xml,.sql" multiple onchange="handleFileSelect(event)" class="hidden" />
+            </label>
+
+            <button onclick="openConverterModal('html2apk')" class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-emerald-700 dark:text-emerald-400 text-xs font-medium flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Konversi HTML / ZIP ke APK">
+              <span data-icon="smartphone"></span>
+              <span>Convert</span>
+            </button>
+
+            <button onclick="toggleContextPanel()" class="px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-medium flex items-center gap-1 border border-slate-200 dark:border-slate-700 transition" title="Lampirkan Teks Panjang">
+              <span data-icon="fileText"></span>
+              <span class="hidden sm:inline">Konteks</span>
+            </button>
+          </div>
+
+          <!-- Right: Export & Send -->
+          <div class="flex items-center gap-1.5 ml-auto">
+            <button onclick="exportCurrentChatMD()" class="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-slate-800 transition" title="Unduh Percakapan (.md)">
+              <span data-icon="download"></span>
+            </button>
+
+            <button id="send-btn" onclick="sendMessage()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 dark:disabled:bg-slate-700 text-white text-sm font-semibold flex items-center gap-1.5 shadow-sm transition">
+              <span>Kirim</span>
+              <span data-icon="send"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Floating Edge Pill Dock (Android Assistive Sidebar Style) -->
+  <div id="edge-pill-dock" title="Seret atas/bawah untuk memindah posisi">
+    <div id="dock-drag-handle" class="w-6 h-1.5 rounded-full bg-zinc-500/80 my-0.5 cursor-grab active:cursor-grabbing"></div>
+
+    <button onclick="openLensModal('camera')" class="squircle-btn bg-gradient-to-br from-emerald-500 to-green-600" title="Kamera Nalar Lens">
+      <span data-icon="camera"></span>
+    </button>
+
+    <button onclick="openLensModal('circle')" class="squircle-btn bg-gradient-to-br from-sky-500 to-blue-600" title="Lingkari Soal (Circle to Search)">
+      <span data-icon="crop"></span>
+    </button>
+
+    <button onclick="openLensModal('screen')" class="squircle-btn bg-gradient-to-br from-zinc-800 to-slate-900 border border-zinc-700" title="Tangkap Layar / Tempel Screenshot">
+      <span data-icon="smartphone"></span>
+    </button>
+
+    <label class="squircle-btn bg-gradient-to-br from-violet-500 to-purple-600 cursor-pointer" title="Pilih Foto Galeri ke Lens">
+      <span data-icon="image"></span>
+      <input type="file" accept="image/*" onchange="handleLensGalleryUpload(event)" class="hidden" />
+    </label>
+
+    <button onclick="openConverterModal('html2apk')" class="squircle-btn bg-gradient-to-br from-amber-500 to-orange-600" title="Studio Konversi File (HTML/ZIP ke APK)">
+      <span data-icon="fileCode"></span>
+    </button>
+
+    <button onclick="toggleEdgeDockCollapse()" class="w-7 h-7 rounded-full bg-zinc-800 hover:bg-zinc-700 text-zinc-300 flex items-center justify-center mt-0.5 transition" title="Sembunyikan / Tampilkan Bilah">
+      <span id="dock-chevron" data-icon="chevronRight"></span>
+    </button>
+  </div>
+
+  <!-- Nalar Lens Pop-Up Modal (Google Lens & Circle-to-Search) -->
+  <div id="lens-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+    <div class="bg-slate-900 text-white border border-slate-700/80 rounded-3xl w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-4 py-3 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-500 via-indigo-500 to-emerald-400 flex items-center justify-center shadow">
+            <span data-icon="scan"></span>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm sm:text-base leading-tight">Nalar Lens &amp; Circle to Search</h3>
+            <p class="text-[11px] text-slate-400">Lingkari atau tarik kotak pada soal untuk menjawab langsung</p>
+          </div>
+        </div>
+        <button onclick="closeLensModal()" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300">
+          <span data-icon="x"></span>
+        </button>
+      </div>
+
+      <div class="px-3.5 py-2.5 bg-slate-900/90 border-b border-slate-800 flex flex-wrap items-center gap-1.5 shrink-0">
+        <button onclick="startLensCamera()" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold flex items-center gap-1.5 transition">
+          <span data-icon="camera"></span>
+          <span>Kamera Lens</span>
+        </button>
+
+        <button onclick="triggerScreenOrMobileHelp()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold flex items-center gap-1.5 transition">
+          <span data-icon="smartphone"></span>
+          <span>Tangkap Layar</span>
+        </button>
+
+        <button onclick="pasteScreenshotFromClipboard()" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-xs font-semibold flex items-center gap-1.5 transition">
+          <span data-icon="clipboard"></span>
+          <span>Tempel Screenshot</span>
+        </button>
+
+        <label class="px-3 py-1.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition">
+          <span data-icon="image"></span>
+          <span>Foto Galeri</span>
+          <input type="file" accept="image/*" onchange="handleLensGalleryUpload(event)" class="hidden" />
+        </label>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3.5 space-y-3">
+        <div id="lens-mobile-guide" class="hidden p-3 rounded-2xl bg-slate-800/90 border border-amber-500/40 text-xs text-slate-200 space-y-1.5">
+          <div class="font-semibold text-amber-300 flex items-center gap-1.5">
+            <span data-icon="info"></span>
+            <span>Info Tangkap Layar di Peramban HP</span>
+          </div>
+          <p class="text-slate-300 leading-relaxed">
+            Peramban HP membatasi perekaman layar lintas aplikasi demi privasi. Gunakan <strong>Kamera Lens</strong>, pilih <strong>Foto Galeri</strong>, atau ambil screenshot di HP lalu tekan <strong>Tempel Screenshot</strong> di atas.
+          </p>
+        </div>
+
+        <div id="lens-video-wrapper" class="hidden relative rounded-2xl overflow-hidden bg-black border border-slate-700 aspect-[4/3] max-h-[340px] mx-auto">
+          <video id="lens-video" autoplay playsinline muted class="w-full h-full object-contain"></video>
+          <div class="absolute bottom-3 inset-x-0 flex justify-center gap-2 px-3">
+            <button onclick="freezeLensFrame()" class="px-4 py-2 rounded-full bg-white text-slate-900 font-bold text-xs shadow-lg flex items-center gap-1.5 hover:bg-blue-50 transition">
+              <span data-icon="crop"></span>
+              <span>Bekukan &amp; Lingkari Soal</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="lens-canvas-wrapper" class="hidden space-y-2">
+          <div class="flex items-center justify-between text-xs text-slate-300 px-1">
+            <span>Geser jari untuk <strong>melingkari / menandai</strong> area soal:</span>
+            <button onclick="resetLensSelection()" class="text-blue-400 hover:text-blue-300 font-medium">Reset Seleksi</button>
+          </div>
+          <div id="lens-stage" class="relative rounded-2xl overflow-hidden bg-black border border-slate-700 flex items-center justify-center touch-none select-none mx-auto">
+            <canvas id="lens-canvas" class="max-w-full max-h-[340px] block cursor-crosshair"></canvas>
+            <div id="lens-selection-box" class="hidden absolute border-2 border-white/80 bg-blue-500/15 pointer-events-none rounded-lg">
+              <div class="lens-bracket lens-tl"></div>
+              <div class="lens-bracket lens-tr"></div>
+              <div class="lens-bracket lens-bl"></div>
+              <div class="lens-bracket lens-br"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="lens-empty-state" class="py-10 px-4 text-center rounded-2xl border border-dashed border-slate-700 bg-slate-800/40 space-y-2">
+          <div class="w-12 h-12 rounded-2xl bg-slate-800 text-blue-400 flex items-center justify-center mx-auto">
+            <span data-icon="scan"></span>
+          </div>
+          <p class="text-sm font-semibold text-slate-200">Siap Memindai Soal Seperti Google Lens</p>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">
+            Pilih <strong>Kamera Lens</strong> untuk memotret soal langsung, <strong>Foto Galeri</strong> untuk mengambil gambar soal dari HP, atau <strong>Tempel Screenshot</strong>.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          <button onclick="setLensActionMode('solve')" data-lens-mode="solve" class="lens-mode-btn py-2 px-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold text-center border border-blue-400">
+            Selesaikan Soal
+          </button>
+          <button onclick="setLensActionMode('ocr')" data-lens-mode="ocr" class="lens-mode-btn py-2 px-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium text-center border border-slate-700">
+            Salin Teks (OCR)
+          </button>
+          <button onclick="setLensActionMode('translate')" data-lens-mode="translate" class="lens-mode-btn py-2 px-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium text-center border border-slate-700">
+            Terjemahkan
+          </button>
+          <button onclick="setLensActionMode('explain')" data-lens-mode="explain" class="lens-mode-btn py-2 px-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium text-center border border-slate-700">
+            Jelaskan Konsep
+          </button>
+        </div>
+
+        <input id="lens-extra-prompt" type="text" placeholder="Catatan tambahan (opsional, misal: 'Jawab nomor 3 saja' atau 'Pakai cara cepat')..." class="w-full px-3.5 py-2 rounded-xl bg-slate-800 border border-slate-700 text-xs text-white placeholder-slate-400 outline-none focus:border-blue-500" />
+
+        <div id="lens-result-card" class="hidden rounded-2xl bg-white text-slate-900 p-4 space-y-2 shadow-lg">
+          <div class="flex items-center justify-between border-b border-slate-200 pb-2">
+            <span class="text-xs font-bold text-blue-700 uppercase tracking-wide">Hasil Analisis Nalar Lens</span>
+            <button onclick="copyLensResult()" class="text-xs font-semibold text-slate-600 hover:text-blue-700">Salin Hasil</button>
+          </div>
+          <div id="lens-result-body" class="markdown-body text-sm"></div>
+        </div>
+      </div>
+
+      <div class="px-4 py-3 bg-slate-900 border-t border-slate-800 flex items-center justify-between gap-2 shrink-0">
+        <button onclick="closeLensModal()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300">
+          Tutup
+        </button>
+        <button id="lens-analyze-btn" onclick="analyzeLensSelection()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-bold flex items-center gap-2 shadow-lg transition">
+          <span data-icon="sparkles"></span>
+          <span>Analisis di Pop-Up</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Studio Konversi File Modal (HTML->APK, ZIP->APK, Image, Docs/Data) -->
+  <div id="converter-modal" class="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2.5 sm:p-4">
+    <div class="bg-white dark:bg-[#0f1624] text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[92dvh] flex flex-col overflow-hidden shadow-2xl">
+      <div class="px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow">
+            <span data-icon="smartphone"></span>
+          </div>
+          <div>
+            <h3 class="font-bold text-base leading-tight">Studio Konversi File</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Konversi HTML/ZIP ke APK Android, Gambar &amp; Dokumen</p>
+          </div>
+        </div>
+        <button onclick="closeConverterModal()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300">
+          <span data-icon="x"></span>
+        </button>
+      </div>
+
+      <!-- Tabs -->
+      <div class="px-4 pt-3 pb-2 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex flex-wrap gap-1.5">
+        <button onclick="switchConverterTab('html2apk')" data-conv-tab="html2apk" class="conv-tab-btn px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold">HTML → APK</button>
+        <button onclick="switchConverterTab('zip2apk')" data-conv-tab="zip2apk" class="conv-tab-btn px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">ZIP → APK</button>
+        <button onclick="switchConverterTab('image')" data-conv-tab="image" class="conv-tab-btn px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">Format Gambar</button>
+        <button onclick="switchConverterTab('docs')" data-conv-tab="docs" class="conv-tab-btn px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold">Dokumen &amp; Data</button>
+      </div>
+
+      <!-- Body -->
+      <div class="flex-1 overflow-y-auto p-4 space-y-4">
+        <!-- TAB 1: HTML -> APK -->
+        <div id="conv-panel-html2apk" class="space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <label class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shadow-xs">
+              <span data-icon="upload"></span>
+              <span>Pilih File .HTML</span>
+              <input type="file" accept=".html,.htm" onchange="handleConvHtmlFile(event)" class="hidden" />
+            </label>
+            <span id="conv-html-filename" class="text-xs text-slate-500 dark:text-slate-400">Belum ada file dipilih (atau tempel kode HTML di bawah)</span>
+          </div>
+
+          <textarea id="conv-html-source" rows="5" placeholder="<!DOCTYPE html><html>... tempel kode HTML Anda di sini atau unggah file .html di atas ...</html>" class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-mono text-xs outline-none focus:border-emerald-500"></textarea>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Aplikasi Android</label>
+              <input id="apk-app-name" type="text" value="AplikasiKu" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Package ID</label>
+              <input id="apk-package-id" type="text" value="com.nalarai.webapp" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Versi &amp; Orientasi</label>
+              <div class="flex gap-1.5">
+                <input id="apk-version-name" type="text" value="1.0.0" class="w-24 px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs outline-none" />
+                <select id="apk-orientation" class="flex-1 px-2.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs outline-none">
+                  <option value="portrait">Portrait (Tegak)</option>
+                  <option value="landscape">Landscape (Miring)</option>
+                  <option value="unspecified">Otomatis</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Warna Status Bar</label>
+              <div class="flex items-center gap-2">
+                <input id="apk-theme-color" type="color" value="#0f172a" class="w-10 h-9 rounded-lg border border-slate-300 dark:border-slate-700 cursor-pointer bg-transparent" />
+                <span class="text-xs text-slate-500 dark:text-slate-400">Tema WebView Layar Penuh</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="buildNativeApkFromHtml()" class="flex-1 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow">
+              <span data-icon="download"></span>
+              <span>Download Langsung .APK</span>
+            </button>
+            <button onclick="exportAndroidSourceZipFromHtml()" class="py-2.5 px-3.5 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs font-semibold">
+              Proyek Android (.ZIP)
+            </button>
+          </div>
+        </div>
+
+        <!-- TAB 2: ZIP -> APK -->
+        <div id="conv-panel-zip2apk" class="hidden space-y-3">
+          <div class="p-3.5 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/60 text-center space-y-2">
+            <p class="text-xs text-slate-600 dark:text-slate-300">Unggah arsip <strong>.ZIP</strong> proyek web Anda (berisi <code>index.html</code>, CSS, JS, gambar, audio, dll).</p>
+            <label class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shadow">
+              <span data-icon="upload"></span>
+              <span>Pilih File Proyek .ZIP</span>
+              <input type="file" accept=".zip" onchange="handleConvZipFile(event)" class="hidden" />
+            </label>
+            <div id="conv-zip-summary" class="text-xs text-emerald-600 dark:text-emerald-400 font-medium"></div>
+          </div>
+
+          <div id="conv-zip-entry-box" class="hidden space-y-1">
+            <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400">File HTML Utama (Entry Point)</label>
+            <select id="conv-zip-entry-select" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono outline-none"></select>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Nama Aplikasi Android</label>
+              <input id="zip-apk-app-name" type="text" value="ProyekWebApp" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs outline-none" />
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1">Package ID</label>
+              <input id="zip-apk-package-id" type="text" value="com.nalarai.zipapp" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-mono outline-none" />
+            </div>
+          </div>
+
+          <button onclick="buildNativeApkFromZip()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-2 shadow">
+            <span data-icon="download"></span>
+            <span>Convert ZIP → Download .APK</span>
+          </button>
+        </div>
+
+        <!-- TAB 3: IMAGE CONVERTER -->
+        <div id="conv-panel-image" class="hidden space-y-3">
+          <label class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5">
+            <span data-icon="image"></span>
+            <span>Pilih Gambar (PNG / JPG / WebP)</span>
+            <input type="file" accept="image/*" onchange="handleConvImageSelect(event)" class="hidden" />
+          </label>
+          <div id="conv-img-info" class="text-xs text-slate-500 dark:text-slate-400">Belum ada gambar dipilih.</div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Format Tujuan</label>
+              <select id="conv-img-format" class="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs">
+                <option value="image/png">PNG (.png)</option>
+                <option value="image/jpeg">JPEG (.jpg)</option>
+                <option value="image/webp">WebP (.webp)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-500 mb-1">Kualitas (<span id="conv-img-q-label">92%</span>)</label>
+              <input id="conv-img-quality" type="range" min="10" max="100" value="92" oninput="document.getElementById('conv-img-q-label').textContent = this.value + '%'" class="w-full mt-2" />
+            </div>
+          </div>
+
+          <button onclick="convertAndDownloadImage()" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold">
+            Konversi &amp; Unduh Gambar
+          </button>
+        </div>
+
+        <!-- TAB 4: DOCS & DATA CONVERTER -->
+        <div id="conv-panel-docs" class="hidden space-y-3">
+          <textarea id="conv-doc-input" rows="6" placeholder="Tempel teks Markdown, JSON, atau CSV di sini untuk dikonversi..." class="w-full p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 font-mono text-xs outline-none"></textarea>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="convertDocAction('md2html')" class="py-2 px-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">MD → HTML</button>
+            <button onclick="convertDocAction('md2pdf')" class="py-2 px-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold">MD → Print PDF</button>
+            <button onclick="convertDocAction('json2csv')" class="py-2 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold">JSON → CSV</button>
+            <button onclick="convertDocAction('csv2json')" class="py-2 px-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold">CSV → JSON</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings / API Key Modal -->
+  <div id="settings-modal" class="fixed inset-0 bg-slate-950/70 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-[#0f1624] text-slate-900 dark:text-slate-100 rounded-3xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <div class="w-9 h-9 rounded-xl bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center">
+            <span data-icon="key"></span>
+          </div>
+          <div>
+            <h3 class="font-bold text-base">Konfigurasi API Key Gemini</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Disimpan permanen di perangkat Anda</p>
+          </div>
+        </div>
+        <button onclick="closeSettingsModal()" class="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">
+          <span data-icon="x"></span>
+        </button>
+      </div>
+
+      <div class="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-xs text-blue-900 dark:text-blue-200 space-y-1 leading-relaxed">
+        <p class="font-semibold">Cara mendapatkan API Key gratis:</p>
+        <ol class="list-decimal ml-4 space-y-0.5">
+          <li>Buka <strong>aistudio.google.com</strong> dan masuk dengan akun Google.</li>
+          <li>Pilih menu <strong>Get API key</strong> lalu klik <strong>Create API key</strong>.</li>
+          <li>Salin kuncinya dan tempel pada kolom di bawah ini.</li>
+        </ol>
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Gemini API Key</label>
+        <input id="gemini-api-key-input" type="password" placeholder="AIzaSy..." class="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:border-blue-500 outline-none text-sm font-mono" />
+      </div>
+
+      <div class="space-y-1.5">
+        <label class="text-xs font-semibold text-slate-700 dark:text-slate-300">Model AI Utama</label>
+        <select id="gemini-model-select" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm outline-none">
+          <option value="gemini-2.5-flash">gemini-2.5-flash (Cepat, Cerdas &amp; Deep Search)</option>
+          <option value="gemini-2.5-pro">gemini-2.5-pro (Penalaran Sangat Kompleks)</option>
+        </select>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2">
+        <button onclick="closeSettingsModal()" class="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold">Batal</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm">Simpan Pengaturan</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. INLINE SVG ICON REGISTRY
+    // ==========================================
+    const ICONS = {
+      history: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>',
+      plus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>',
+      x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+      search: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+      scan: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" x2="17" y1="12" y2="12"/></svg>',
+      image: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
+      paperclip: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>',
+      fileText: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>',
+      fileCode: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></svg>',
+      send: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+      download: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>',
+      upload: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>',
+      camera: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>',
+      crop: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg>',
+      smartphone: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>',
+      sparkles: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>',
+      chevronRight: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',
+      chevronLeft: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>',
+      clipboard: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg>',
+      info: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+      settings: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+      key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>',
+      pin: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>',
+      edit: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>',
+      trash: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+      shieldCheck: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
+      brain: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/></svg>',
+      sun: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+      moon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>',
+      archive: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/></svg>'
+    };
+
+    function hydrateIcons(root = document) {
+      root.querySelectorAll('[data-icon]').forEach(el => {
+        const name = el.getAttribute('data-icon');
+        if (ICONS[name]) el.innerHTML = ICONS[name];
+      });
+    }
+
+    // ==========================================
+    // 2. STATE & PERSISTENT INDEXEDDB STORAGE
+    // ==========================================
+    const STORAGE_KEY = 'nalarai_sessions_v3';
+    const SETTINGS_KEY = 'nalarai_settings_v3';
+    const THEME_KEY = 'nalarai_theme_v3';
+    const DB_NAME = 'NalarAIPersistentDB';
+    const DB_STORE = 'sessions_store';
+
+    const state = {
+      mode: 'critical',
+      category: 'Umum',
+      sessions: [],
+      currentSessionId: null,
+      historyFilter: 'all',
+      attachedImages: [],
+      attachedFiles: [],
+      isGenerating: false,
+      apiKey: '',
+      model: 'gemini-2.5-flash',
+      theme: 'dark'
+    };
+
+    const lensState = {
+      stream: null,
+      sourceImage: null,
+      actionMode: 'solve',
+      isDrawing: false,
+      startX: 0,
+      startY: 0,
+      selection: null,
+      lastResultText: ''
+    };
+
+    const convState = {
+      zipFilesMap: {}, // relativePath -> Uint8Array
+      selectedImageFile: null
+    };
+
+    let toastTimer = null;
+    function showToast(msg, iconName = 'info') {
+      const box = document.getElementById('toast-box');
+      const iconEl = document.getElementById('toast-icon');
+      const textEl = document.getElementById('toast-text');
+      iconEl.innerHTML = ICONS[iconName] || ICONS.info;
+      textEl.textContent = msg;
+      box.classList.remove('opacity-0', '-translate-y-2');
+      box.classList.add('opacity-100', 'translate-y-0');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        box.classList.add('opacity-0', '-translate-y-2');
+        box.classList.remove('opacity-100', 'translate-y-0');
+      }, 3400);
+    }
+
+    // Theme Management
+    function initTheme() {
+      const saved = localStorage.getItem(THEME_KEY);
+      state.theme = saved === 'light' ? 'light' : 'dark';
+      applyTheme();
+    }
+
+    function toggleTheme() {
+      state.theme = state.theme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem(THEME_KEY, state.theme);
+      applyTheme();
+    }
+
+    function applyTheme() {
+      const html = document.documentElement;
+      const iconEl = document.getElementById('theme-icon');
+      if (state.theme === 'dark') {
+        html.classList.add('dark');
+        if (iconEl) iconEl.innerHTML = ICONS.sun;
+      } else {
+        html.classList.remove('dark');
+        if (iconEl) iconEl.innerHTML = ICONS.moon;
+      }
+    }
+
+    // IndexedDB Helpers for Permanent History Persistence
+    function openNalarDB() {
+      return new Promise((resolve, reject) => {
+        if (!window.indexedDB) return reject(new Error('No IndexedDB'));
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains(DB_STORE)) {
+            db.createObjectStore(DB_STORE);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveToIndexedDB(sessionsData) {
+      try {
+        const db = await openNalarDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(DB_STORE, 'readwrite');
+          tx.objectStore(DB_STORE).put(sessionsData, 'all_sessions');
+          tx.oncomplete = () => resolve(true);
+          tx.onerror = () => reject(tx.error);
+        });
+      } catch (e) {
+        return false;
+      }
+    }
+
+    async function loadFromIndexedDB() {
+      try {
+        const db = await openNalarDB();
+        return await new Promise((resolve, reject) => {
+          const tx = db.transaction(DB_STORE, 'readonly');
+          const req = tx.objectStore(DB_STORE).get('all_sessions');
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => reject(req.error);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function requestPersistentStorage() {
+      if (navigator.storage && navigator.storage.persist) {
+        try { await navigator.storage.persist(); } catch (e) { /* ignore */ }
+      }
+    }
+
+    // Settings
+    function loadSettings() {
+      try {
+        const raw = localStorage.getItem(SETTINGS_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          state.apiKey = parsed.apiKey || '';
+          state.model = parsed.model || 'gemini-2.5-flash';
+        }
+      } catch (e) { /* ignore */ }
+      updateApiIndicator();
+    }
+
+    function updateApiIndicator() {
+      const dot = document.getElementById('api-dot');
+      if (!dot) return;
+      if (state.apiKey && state.apiKey.trim().length > 10) {
+        dot.classList.remove('bg-amber-500');
+        dot.classList.add('bg-emerald-500');
+      } else {
+        dot.classList.remove('bg-emerald-500');
+        dot.classList.add('bg-amber-500');
+      }
+    }
+
+    function openSettingsModal() {
+      document.getElementById('gemini-api-key-input').value = state.apiKey;
+      document.getElementById('gemini-model-select').value = state.model;
+      document.getElementById('settings-modal').classList.remove('hidden');
+    }
+
+    function closeSettingsModal() {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
+
+    function saveSettings() {
+      const key = document.getElementById('gemini-api-key-input').value.trim();
+      const model = document.getElementById('gemini-model-select').value;
+      state.apiKey = key;
+      state.model = model;
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify({ apiKey: key, model }));
+      updateApiIndicator();
+      closeSettingsModal();
+      showToast('Pengaturan API Key tersimpan.', 'shieldCheck');
+    }
+
+    // ==========================================
+    // 3. SESSION & STRUCTURED HISTORY MANAGEMENT
+    // ==========================================
+    async function loadSessions() {
+      let loaded = await loadFromIndexedDB();
+      if (!Array.isArray(loaded) || loaded.length === 0) {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('nalarai_sessions_v2');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) loaded = parsed;
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      state.sessions = Array.isArray(loaded) ? loaded : [];
+      if (state.sessions.length === 0) {
+        createNewSession(false);
+      } else {
+        state.currentSessionId = state.sessions[0].id;
+      }
+      updateHistoryBadge();
+      renderChat();
+    }
+
+    function saveSessions() {
+      saveToIndexedDB(state.sessions);
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessions));
+      } catch (e) {
+        // Fallback: save text-only copy to localStorage if images exceed 5MB quota, while IndexedDB keeps full images
+        try {
+          const lite = state.sessions.map(s => ({
+            ...s,
+            messages: (s.messages || []).map(m => ({ ...m, images: [] }))
+          }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(lite));
+        } catch (err2) { /* IndexedDB handles it */ }
+      }
+      updateHistoryBadge();
+      renderHistoryList();
+    }
+
+    function updateHistoryBadge() {
+      const badge = document.getElementById('history-count-badge');
+      const activeCount = state.sessions.filter(s => s.messages && s.messages.length > 0).length;
+      if (badge) badge.textContent = activeCount;
+    }
+
+    function getCurrentSession() {
+      let session = state.sessions.find(s => s.id === state.currentSessionId);
+      if (!session) {
+        session = createNewSession(false);
+      }
+      return session;
+    }
+
+    function createNewSession(shouldRender = true) {
+      const id = 'sess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+      const newSess = {
+        id,
+        title: 'Percakapan Baru',
+        category: state.category,
+        pinned: false,
+        updatedAt: Date.now(),
+        messages: []
+      };
+      state.sessions.unshift(newSess);
+      state.currentSessionId = id;
+      if (shouldRender) {
+        saveSessions();
+        renderChat();
+      }
+      return newSess;
+    }
+
+    function switchSession(id) {
+      state.currentSessionId = id;
+      const sess = getCurrentSession();
+      if (sess.category) {
+        state.category = sess.category;
+        document.getElementById('category-select').value = sess.category;
+      }
+      renderChat();
+      renderHistoryList();
+      toggleSidebar(false);
+    }
+
+    function togglePinSession(id, event) {
+      if (event) event.stopPropagation();
+      const sess = state.sessions.find(s => s.id === id);
+      if (!sess) return;
+      sess.pinned = !sess.pinned;
+      saveSessions();
+      showToast(sess.pinned ? 'Percakapan disematkan.' : 'Sematkan dilepas.', 'pin');
+    }
+
+    function renameSession(id, event) {
+      if (event) event.stopPropagation();
+      const sess = state.sessions.find(s => s.id === id);
+      if (!sess) return;
+      const nextTitle = prompt('Ubah judul percakapan:', sess.title);
+      if (nextTitle && nextTitle.trim()) {
+        sess.title = nextTitle.trim();
+        saveSessions();
+      }
+    }
+
+    function deleteSession(id, event) {
+      if (event) event.stopPropagation();
+      state.sessions = state.sessions.filter(s => s.id !== id);
+      if (state.sessions.length === 0) {
+        createNewSession(false);
+      } else if (state.currentSessionId === id) {
+        state.currentSessionId = state.sessions[0].id;
+      }
+      saveSessions();
+      renderChat();
+      showToast('Percakapan dihapus.', 'trash');
+    }
+
+    function toggleSidebar(open) {
+      const sidebar = document.getElementById('history-sidebar');
+      const backdrop = document.getElementById('sidebar-backdrop');
+      if (open) {
+        renderHistoryList();
+        sidebar.classList.remove('-translate-x-full');
+        backdrop.classList.remove('hidden');
+      } else {
+        sidebar.classList.add('-translate-x-full');
+        backdrop.classList.add('hidden');
+      }
+    }
+
+    function setHistoryFilter(filter) {
+      state.historyFilter = filter;
+      const allBtn = document.getElementById('filter-all-btn');
+      const pinBtn = document.getElementById('filter-pinned-btn');
+      if (filter === 'all') {
+        allBtn.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+        pinBtn.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+      } else {
+        pinBtn.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+        allBtn.className = 'flex-1 py-1.5 px-2 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700';
+      }
+      renderHistoryList();
+    }
+
+    function getTimeGroupLabel(timestamp, pinned) {
+      if (pinned) return 'Disematkan';
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const startOfYesterday = startOfToday - 86400000;
+      const sevenDaysAgo = startOfToday - 7 * 86400000;
+
+      if (timestamp >= startOfToday) return 'Hari Ini';
+      if (timestamp >= startOfYesterday) return 'Kemarin';
+      if (timestamp >= sevenDaysAgo) return '7 Hari Terakhir';
+      return 'Lebih Lama';
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('history-list-container');
+      const keyword = (document.getElementById('history-search-input')?.value || '').toLowerCase().trim();
+
+      const filtered = state.sessions
+        .filter(s => s.messages && s.messages.length > 0)
+        .filter(s => state.historyFilter === 'all' || s.pinned)
+        .filter(s => {
+          if (!keyword) return true;
+          const inTitle = s.title.toLowerCase().includes(keyword);
+          const inMsg = s.messages.some(m => (m.text || '').toLowerCase().includes(keyword));
+          return inTitle || inMsg;
+        })
+        .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="text-center py-10 px-4 text-xs text-slate-400">Tidak ada riwayat percakapan yang cocok.</div>`;
+        return;
+      }
+
+      const groupsOrder = ['Disematkan', 'Hari Ini', 'Kemarin', '7 Hari Terakhir', 'Lebih Lama'];
+      const groups = {};
+      groupsOrder.forEach(g => groups[g] = []);
+
+      filtered.forEach(sess => {
+        const label = getTimeGroupLabel(sess.updatedAt || Date.now(), sess.pinned);
+        groups[label].push(sess);
+      });
+
+      let html = '';
+      groupsOrder.forEach(groupName => {
+        const items = groups[groupName];
+        if (!items || items.length === 0) return;
+
+        html += `<div>
+          <div class="px-2 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">${groupName}</div>
+          <div class="space-y-1">`;
+
+        items.forEach(sess => {
+          const isActive = sess.id === state.currentSessionId;
+          const timeStr = new Date(sess.updatedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+          const qCount = sess.messages.filter(m => m.role === 'user').length;
+          html += `
+            <div onclick="switchSession('${sess.id}')" class="group p-2.5 rounded-xl cursor-pointer border transition ${isActive ? 'bg-blue-50/90 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800' : 'bg-white dark:bg-slate-900/50 hover:bg-slate-50 dark:hover:bg-slate-800/80 border-transparent hover:border-slate-200 dark:hover:border-slate-700'}">
+              <div class="flex items-start justify-between gap-1.5">
+                <p class="text-xs font-semibold ${isActive ? 'text-blue-900 dark:text-blue-200' : 'text-slate-800 dark:text-slate-200'} line-clamp-1">${escapeHtml(sess.title)}</p>
+                <div class="flex items-center gap-0.5 shrink-0 opacity-80 group-hover:opacity-100">
+                  <button onclick="togglePinSession('${sess.id}', event)" class="p-1 rounded hover:bg-slate-200/80 dark:hover:bg-slate-700 ${sess.pinned ? 'text-blue-500' : 'text-slate-400'}" title="Sematkan">${ICONS.pin}</button>
+                  <button onclick="renameSession('${sess.id}', event)" class="p-1 rounded hover:bg-slate-200/80 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-white" title="Ubah Judul">${ICONS.edit}</button>
+                  <button onclick="deleteSession('${sess.id}', event)" class="p-1 rounded hover:bg-rose-100 dark:hover:bg-rose-950 text-slate-400 hover:text-rose-500" title="Hapus">${ICONS.trash}</button>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 mt-1 text-[10.5px] text-slate-500 dark:text-slate-400">
+                <span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${escapeHtml(sess.category || 'Umum')}</span>
+                <span>${qCount} tanya</span>
+                <span>• ${timeStr}</span>
+              </div>
+            </div>
+          `;
+        });
+
+        html += `</div></div>`;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function exportHistoryJSON() {
+      const dataStr = JSON.stringify(state.sessions, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `NalarAI_Riwayat_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Cadangan riwayat (.json) diunduh.', 'download');
+    }
+
+    function importHistoryJSON(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const imported = JSON.parse(reader.result);
+          if (!Array.isArray(imported)) throw new Error('Format tidak valid');
+          const existingIds = new Set(state.sessions.map(s => s.id));
+          let added = 0;
+          imported.forEach(item => {
+            if (item && item.id && !existingIds.has(item.id)) {
+              state.sessions.push(item);
+              added++;
+            }
+          });
+          saveSessions();
+          showToast(`${added} percakapan berhasil dipulihkan.`, 'upload');
+        } catch (err) {
+          showToast('File cadangan JSON tidak valid.', 'info');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    function exportCurrentChatMD() {
+      const sess = getCurrentSession();
+      if (!sess.messages || sess.messages.length === 0) {
+        showToast('Belum ada percakapan untuk diunduh.', 'info');
+        return;
+      }
+      let md = `# ${sess.title}\nKategori: ${sess.category}\n\n---\n\n`;
+      sess.messages.forEach(m => {
+        md += `### ${m.role === 'user' ? 'Pengguna' : 'NalarAI'}\n\n${m.text}\n\n---\n\n`;
+      });
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${sess.title.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40)}.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Percakapan diekspor ke .md', 'download');
+    }
+
+    // ==========================================
+    // 4. MODE, ATTACHMENTS (PHOTO, FILE & ZIP)
+    // ==========================================
+    function setMode(mode) {
+      state.mode = mode;
+      const critBtn = document.getElementById('mode-critical-btn');
+      const fastBtn = document.getElementById('mode-fast-btn');
+      if (mode === 'critical') {
+        critBtn.className = 'px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm transition';
+        fastBtn.className = 'px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+      } else {
+        fastBtn.className = 'px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-semibold bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm transition';
+        critBtn.className = 'px-2.5 sm:px-3.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+      }
+    }
+
+    function toggleContextPanel(forceState) {
+      const panel = document.getElementById('context-panel');
+      if (typeof forceState === 'boolean') panel.classList.toggle('hidden', !forceState);
+      else panel.classList.toggle('hidden');
+    }
+
+    function handlePhotoSelect(event) {
+      const files = Array.from(event.target.files || []);
+      files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          state.attachedImages.push({
+            name: file.name,
+            mimeType: file.type,
+            dataUrl: reader.result
+          });
+          renderAttachmentsPreview();
+        };
+        reader.readAsDataURL(file);
+      });
+      event.target.value = '';
+    }
+
+    async function handleFileSelect(event) {
+      const files = Array.from(event.target.files || []);
+      for (const file of files) {
+        if (file.size > 25 * 1024 * 1024) {
+          showToast(`File ${file.name} melebihi batas 25 MB.`, 'info');
+          continue;
+        }
+        const lower = file.name.toLowerCase();
+        if (lower.endsWith('.zip')) {
+          await extractZipAttachment(file);
+        } else if (file.type === 'application/pdf' || lower.endsWith('.pdf')) {
+          const base64 = await readFileAsBase64(file);
+          state.attachedFiles.push({
+            name: file.name,
+            isPdf: true,
+            mimeType: 'application/pdf',
+            base64
+          });
+          renderAttachmentsPreview();
+        } else {
+          const textContent = await file.text();
+          state.attachedFiles.push({
+            name: file.name,
+            isPdf: false,
+            textContent
+          });
+          renderAttachmentsPreview();
+        }
+      }
+      event.target.value = '';
+    }
+
+    function readFileAsBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function extractZipAttachment(zipFile) {
+      if (!window.JSZip) {
+        showToast('Pustaka JSZip belum termuat.', 'info');
+        return;
+      }
+      try {
+        showToast(`Mengekstrak arsip ${zipFile.name}...`, 'archive');
+        const zip = await JSZip.loadAsync(zipFile);
+        const textExts = ['.txt', '.md', '.csv', '.json', '.py', '.js', '.ts', '.jsx', '.tsx', '.html', '.htm', '.css', '.cpp', '.c', '.h', '.java', '.xml', '.sql', '.sh', '.yaml', '.yml', '.ini', '.env'];
+        const imgExts = ['.png', '.jpg', '.jpeg', '.webp'];
+
+        let treeList = [];
+        let extractedTextBlocks = [];
+        let extractedImages = 0;
+        let extractedPdfs = 0;
+
+        const entries = Object.keys(zip.files).sort();
+        for (const path of entries) {
+          const entry = zip.files[path];
+          if (entry.dir || path.includes('__MACOSX') || path.includes('/.')) continue;
+          treeList.push(path);
+          const lower = path.toLowerCase();
+
+          if (textExts.some(ext => lower.endsWith(ext))) {
+            const content = await entry.async('string');
+            extractedTextBlocks.push(`--- FILE: ${path} ---\n${content.slice(0, 15000)}`);
+          } else if (lower.endsWith('.pdf') && extractedPdfs < 3) {
+            const b64 = await entry.async('base64');
+            state.attachedFiles.push({
+              name: `${zipFile.name}/${path}`,
+              isPdf: true,
+              mimeType: 'application/pdf',
+              base64: b64
+            });
+            extractedPdfs++;
+          } else if (imgExts.some(ext => lower.endsWith(ext)) && extractedImages < 4) {
+            const b64 = await entry.async('base64');
+            const mime = lower.endsWith('.png') ? 'image/png' : (lower.endsWith('.webp') ? 'image/webp' : 'image/jpeg');
+            state.attachedImages.push({
+              name: `${zipFile.name}/${path}`,
+              mimeType: mime,
+              dataUrl: `data:${mime};base64,${b64}`
+            });
+            extractedImages++;
+          }
+        }
+
+        const combinedZipReport = `Struktur Direktori Arsip ZIP (${zipFile.name}):\n${treeList.join('\n')}\n\nIsi File Teks/Kode di Dalam ZIP:\n${extractedTextBlocks.join('\n\n').slice(0, 55000)}`;
+        state.attachedFiles.push({
+          name: `${zipFile.name} (${treeList.length} file)`,
+          isZip: true,
+          isPdf: false,
+          textContent: combinedZipReport
+        });
+
+        renderAttachmentsPreview();
+        showToast(`Arsip ZIP terbaca (${treeList.length} file).`, 'archive');
+      } catch (err) {
+        showToast('Gagal membaca file ZIP: ' + err.message, 'info');
+      }
+    }
+
+    function removeAttachedImage(idx) {
+      state.attachedImages.splice(idx, 1);
+      renderAttachmentsPreview();
+    }
+
+    function removeAttachedFile(idx) {
+      state.attachedFiles.splice(idx, 1);
+      renderAttachmentsPreview();
+    }
+
+    function renderAttachmentsPreview() {
+      const box = document.getElementById('attachments-preview');
+      if (state.attachedImages.length === 0 && state.attachedFiles.length === 0) {
+        box.classList.add('hidden');
+        box.classList.remove('flex');
+        box.innerHTML = '';
+        return;
+      }
+      box.classList.remove('hidden');
+      box.classList.add('flex');
+
+      let html = '';
+      state.attachedImages.forEach((img, i) => {
+        html += `
+          <div class="relative group w-16 h-16 rounded-xl overflow-hidden border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 shadow-xs">
+            <img src="${img.dataUrl}" class="w-full h-full object-cover" />
+            <button onclick="removeAttachedImage(${i})" class="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center text-xs hover:bg-rose-600">×</button>
+          </div>
+        `;
+      });
+
+      state.attachedFiles.forEach((f, i) => {
+        html += `
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-xs font-medium text-slate-700 dark:text-slate-200 shadow-xs">
+            ${f.isZip ? ICONS.archive : ICONS.fileText}
+            <span class="max-w-[160px] truncate">${escapeHtml(f.name)}</span>
+            <button onclick="removeAttachedFile(${i})" class="text-slate-400 hover:text-rose-500 font-bold ml-1">×</button>
+          </div>
+        `;
+      });
+
+      box.innerHTML = html;
+    }
+
+    function handleInputKeydown(event) {
+      if (event.key === 'Enter' && !event.shiftKey && window.innerWidth >= 768) {
+        event.preventDefault();
+        sendMessage();
+      }
+    }
+
+    // ==========================================
+    // 5. GEMINI API CALL (CRITICAL + DEEP SEARCH)
+    // ==========================================
+    function buildSystemInstruction(mode, category) {
+      if (mode === 'critical') {
+        return `Anda adalah NalarAI, asisten AI berpikir kritis, analitis, dan mendalam dalam Bahasa Indonesia. Kategori fokus saat ini: ${category}.
+Aturan wajib untuk setiap jawaban:
+1. Jangan pernah menebak atau menjawab asal. Verifikasi konsep, angka, langkah matematika, dan fakta secara sistematis.
+2. Jika ada gambar soal, dokumen, atau arsip ZIP terlampir, baca seluruh struktur dan isinya dengan teliti lalu selesaikan langkah demi langkah secara jelas dan akurat.
+3. Susun respons Anda dengan format persis berikut agar jejak berpikir kritis dapat dipisahkan secara rapi:
+<thinking>
+- **Tahap 1 — Dekonstruksi Masalah:** (urai inti pertanyaan, variabel, dan syarat tersembunyi)
+- **Tahap 2 — Penelusuran Konsep & Validasi Fakta:** (rumus, aturan, atau fakta terverifikasi yang digunakan)
+- **Tahap 3 — Uji Silang & Koreksi Mandiri:** (verifikasi ulang hitungan/logika sebelum menyimpulkan jawaban akhir)
+</thinking>
+[Tulis jawaban utama yang terstruktur, jernih, mendalam, dan mudah dibaca di sini menggunakan Markdown dan LaTeX ($...$ atau $$...$$) untuk rumus matematika.]`;
+      } else {
+        return `Anda adalah NalarAI dalam Mode Cepat (Harian) berbahasa Indonesia. Kategori: ${category}.
+Berikan jawaban yang langsung ke inti, ringkas, akurat, dan praktis untuk membantu tugas sehari-hari. Gunakan Markdown rapi dan LaTeX untuk rumus bila diperlukan.`;
+      }
+    }
+
+    async function callGeminiAPI({ parts, mode, category, useSearch = true }) {
+      if (!state.apiKey) {
+        openSettingsModal();
+        throw new Error('Silakan masukkan Gemini API Key Anda terlebih dahulu di menu Pengaturan.');
+      }
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(state.model)}:generateContent?key=${encodeURIComponent(state.apiKey)}`;
+
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: buildSystemInstruction(mode, category) }]
+        },
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          temperature: mode === 'critical' ? 0.25 : 0.5
+        }
+      };
+
+      if (mode === 'critical' && useSearch) {
+        payload.tools = [{ google_search: {} }];
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error?.message || `HTTP ${res.status}`);
+      }
+
+      const candidate = data?.candidates?.[0];
+      const rawText = candidate?.content?.parts?.map(p => p.text || '').join('') || '';
+      const groundingChunks = candidate?.groundingMetadata?.groundingChunks || [];
+      const sources = groundingChunks.map(c => c.web).filter(w => w && w.uri && w.title);
+
+      let thinking = '';
+      let answer = rawText;
+      const match = rawText.match(/<thinking>([\s\S]*?)<\/thinking>/i);
+      if (match) {
+        thinking = match[1].trim();
+        answer = rawText.replace(/<thinking>[\s\S]*?<\/thinking>/i, '').trim();
+      }
+
+      return { thinking, answer, sources };
+    }
+
+    async function sendMessage() {
+      if (state.isGenerating) return;
+      const inputEl = document.getElementById('user-prompt-input');
+      const contextEl = document.getElementById('long-context-input');
+      const userText = inputEl.value.trim();
+      const extraContext = contextEl.value.trim();
+
+      const hasAttachments = state.attachedImages.length > 0 || state.attachedFiles.length > 0;
+      if (!userText && !hasAttachments && !extraContext) {
+        showToast('Tulis pertanyaan atau lampirkan foto soal / file / ZIP.', 'info');
+        return;
+      }
+
+      const effectivePrompt = userText || 'Tolong baca dan analisis isi lampiran ini secara kritis, teliti, dan lengkap.';
+      const sess = getCurrentSession();
+
+      if (sess.messages.length === 0) {
+        sess.title = effectivePrompt.slice(0, 48) + (effectivePrompt.length > 48 ? '...' : '');
+        sess.category = state.category;
+      }
+
+      const msgImages = [...state.attachedImages];
+      const msgFiles = [...state.attachedFiles];
+
+      sess.messages.push({
+        id: 'm_' + Date.now(),
+        role: 'user',
+        text: effectivePrompt,
+        context: extraContext,
+        images: msgImages.map(i => i.dataUrl),
+        files: msgFiles.map(f => f.name),
+        timestamp: Date.now()
+      });
+      sess.updatedAt = Date.now();
+
+      inputEl.value = '';
+      contextEl.value = '';
+      toggleContextPanel(false);
+      state.attachedImages = [];
+      state.attachedFiles = [];
+      renderAttachmentsPreview();
+
+      state.isGenerating = true;
+      document.getElementById('send-btn').disabled = true;
+      saveSessions();
+      renderChat();
+
+      try {
+        const apiParts = [];
+        let combinedText = effectivePrompt;
+        if (extraContext) combinedText += `\n\n[Konteks Tambahan]:\n${extraContext}`;
+        msgFiles.forEach(f => {
+          if (!f.isPdf && f.textContent) {
+            combinedText += `\n\n[Isi Lampiran: ${f.name}]:\n${f.textContent.slice(0, 55000)}`;
+          }
+        });
+        apiParts.push({ text: combinedText });
+
+        msgImages.forEach(img => {
+          apiParts.push({
+            inlineData: {
+              mimeType: img.mimeType || 'image/jpeg',
+              data: img.dataUrl.split(',')[1]
+            }
+          });
+        });
+
+        msgFiles.forEach(f => {
+          if (f.isPdf && f.base64) {
+            apiParts.push({
+              inlineData: {
+                mimeType: 'application/pdf',
+                data: f.base64
+              }
+            });
+          }
+        });
+
+        const result = await callGeminiAPI({
+          parts: apiParts,
+          mode: state.mode,
+          category: state.category,
+          useSearch: state.mode === 'critical'
+        });
+
+        sess.messages.push({
+          id: 'm_' + (Date.now() + 1),
+          role: 'assistant',
+          text: result.answer,
+          thinking: result.thinking,
+          sources: result.sources,
+          audit: '',
+          timestamp: Date.now()
+        });
+        sess.updatedAt = Date.now();
+      } catch (err) {
+        sess.messages.push({
+          id: 'm_' + (Date.now() + 1),
+          role: 'assistant',
+          text: `⚠️ **Gagal memproses permintaan:** ${err.message}`,
+          thinking: '',
+          sources: [],
+          timestamp: Date.now()
+        });
+      } finally {
+        state.isGenerating = false;
+        document.getElementById('send-btn').disabled = false;
+        saveSessions();
+        renderChat();
+      }
+    }
+
+    async function runSelfAudit(msgId) {
+      const sess = getCurrentSession();
+      const idx = sess.messages.findIndex(m => m.id === msgId);
+      if (idx === -1) return;
+      const aiMsg = sess.messages[idx];
+      const prevUserMsg = sess.messages[idx - 1];
+
+      showToast('Menjalankan Self-Audit independen...', 'shieldCheck');
+      try {
+        const auditPrompt = `Lakukan audit kritis independen terhadap jawaban berikut atas pertanyaan "${prevUserMsg?.text || ''}".
+Periksa apakah ada kesalahan hitung, asumsi keliru, atau bagian yang kurang lengkap. Jika sudah benar, jelaskan mengapa valid. Jika ada kekeliruan, berikan koreksinya secara tegas dan jelas.
+
+Jawaban yang diaudit:
+${aiMsg.text}`;
+
+        const res = await callGeminiAPI({
+          parts: [{ text: auditPrompt }],
+          mode: 'fast',
+          category: state.category,
+          useSearch: false
+        });
+
+        aiMsg.audit = res.answer;
+        saveSessions();
+        renderChat();
+        showToast('Self-Audit selesai.', 'shieldCheck');
+      } catch (err) {
+        showToast('Gagal menjalankan audit: ' + err.message, 'info');
+      }
+    }
+
+    // ==========================================
+    // 6. MARKDOWN & CLEAN CHAT RENDERER
+    // ==========================================
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function renderMarkdownSafe(mdText) {
+      if (!window.marked) return `<p>${escapeHtml(mdText)}</p>`;
+      const html = marked.parse(mdText || '', { breaks: true, gfm: true });
+      const temp = document.createElement('div');
+      temp.innerHTML = html;
+
+      temp.querySelectorAll('pre').forEach(pre => {
+        const codeEl = pre.querySelector('code');
+        const langClass = codeEl?.className || '';
+        const lang = langClass.replace('language-', '') || 'kode';
+        const rawCode = codeEl ? codeEl.textContent : pre.textContent;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper';
+        wrapper.innerHTML = `
+          <div class="code-block-header">
+            <span>${escapeHtml(lang)}</span>
+            <button type="button" onclick="copyCodeText(this)" data-code="${escapeHtml(rawCode)}" class="px-2 py-0.5 rounded bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs transition">Salin Kode</button>
+          </div>
+        `;
+        wrapper.appendChild(pre.cloneNode(true));
+        pre.replaceWith(wrapper);
+      });
+
+      return temp.innerHTML;
+    }
+
+    function copyCodeText(btn) {
+      const code = btn.getAttribute('data-code') || '';
+      navigator.clipboard.writeText(code).then(() => {
+        btn.textContent = 'Tersalin!';
+        setTimeout(() => { btn.textContent = 'Salin Kode'; }, 1800);
+      });
+    }
+
+    function applyKaTeX(container) {
+      if (window.renderMathInElement) {
+        try {
+          renderMathInElement(container, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+          });
+        } catch (e) { /* ignore */ }
+      }
+    }
+
+    function renderChat() {
+      const container = document.getElementById('chat-container');
+      const sess = getCurrentSession();
+
+      // Clean minimalist welcome screen (no descriptive paragraph, no 4 quick cards)
+      if (!sess.messages || sess.messages.length === 0) {
+        container.innerHTML = `
+          <div class="min-h-[54dvh] flex flex-col items-center justify-center text-center px-4">
+            <div class="space-y-3 max-w-xl">
+              <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800/80 text-blue-700 dark:text-blue-300 text-xs font-semibold">
+                ${ICONS.brain}
+                <span>Penalaran Kritis + Validasi Fakta + Nalar Lens</span>
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Apa yang ingin Anda selesaikan hari ini?</h1>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      sess.messages.forEach(msg => {
+        if (msg.role === 'user') {
+          let mediaHtml = '';
+          if (msg.images && msg.images.length > 0) {
+            mediaHtml += `<div class="flex flex-wrap gap-2 mb-2">` +
+              msg.images.map(src => `<img src="${src}" class="max-h-44 rounded-xl border border-blue-400/50 object-cover" />`).join('') +
+              `</div>`;
+          }
+          if (msg.files && msg.files.length > 0) {
+            mediaHtml += `<div class="flex flex-wrap gap-1.5 mb-2">` +
+              msg.files.map(fn => `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-blue-700/80 text-white text-xs">${ICONS.fileText} ${escapeHtml(fn)}</span>`).join('') +
+              `</div>`;
+          }
+
+          html += `
+            <div class="flex justify-end">
+              <div class="max-w-[90%] sm:max-w-[78%] rounded-3xl rounded-br-md bg-blue-600 text-white px-4 sm:px-5 py-3.5 shadow-sm">
+                ${mediaHtml}
+                <div class="text-[16px] leading-relaxed whitespace-pre-wrap">${escapeHtml(msg.text)}</div>
+              </div>
+            </div>
+          `;
+        } else {
+          let thinkingHtml = '';
+          if (msg.thinking) {
+            thinkingHtml = `
+              <details class="mb-3 rounded-2xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 overflow-hidden">
+                <summary class="px-3.5 py-2.5 text-xs font-bold text-blue-700 dark:text-blue-400 cursor-pointer select-none flex items-center gap-2 hover:bg-slate-100/80 dark:hover:bg-slate-800/70">
+                  ${ICONS.brain}
+                  <span>Jejak Berpikir Kritis &amp; Validasi Jawaban</span>
+                </summary>
+                <div class="px-4 py-3 border-t border-slate-200/80 dark:border-slate-800 text-xs sm:text-sm text-slate-700 dark:text-slate-300 markdown-body">
+                  ${renderMarkdownSafe(msg.thinking)}
+                </div>
+              </details>
+            `;
+          }
+
+          let sourcesHtml = '';
+          if (msg.sources && msg.sources.length > 0) {
+            const unique = msg.sources.slice(0, 4);
+            sourcesHtml = `
+              <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-1.5">
+                <span class="text-[11px] font-semibold text-slate-400 mr-1">Sumber Referensi:</span>
+                ${unique.map(s => `<a href="${escapeHtml(s.uri)}" target="_blank" rel="noopener" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-700 dark:text-slate-300 hover:text-blue-600 border border-slate-200 dark:border-slate-700 truncate max-w-[210px]">${escapeHtml(s.title)}</a>`).join('')}
+              </div>
+            `;
+          }
+
+          let auditHtml = '';
+          if (msg.audit) {
+            auditHtml = `
+              <div class="mt-3 p-3.5 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/70 text-slate-800 dark:text-slate-200">
+                <div class="text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 mb-1.5">
+                  ${ICONS.shieldCheck}
+                  <span>Hasil Self-Audit Independen</span>
+                </div>
+                <div class="markdown-body text-sm">${renderMarkdownSafe(msg.audit)}</div>
+              </div>
+            `;
+          }
+
+          html += `
+            <div class="flex items-start gap-2.5 sm:gap-3.5">
+              <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm shrink-0 mt-0.5 shadow-xs">N</div>
+              <div class="flex-1 min-w-0 bg-white dark:bg-[#111928] border border-slate-200/90 dark:border-slate-800 rounded-3xl rounded-tl-md px-4 sm:px-6 py-4 shadow-xs">
+                ${thinkingHtml}
+                <div class="markdown-body text-slate-800 dark:text-slate-100">${renderMarkdownSafe(msg.text)}</div>
+                ${sourcesHtml}
+                ${auditHtml}
+                <div class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center gap-2">
+                  <button onclick="runSelfAudit('${msg.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/60 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 text-xs font-semibold flex items-center gap-1.5 transition">
+                    ${ICONS.shieldCheck}
+                    <span>Self-Audit / Cek Ulang Jawaban</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      });
+
+      if (state.isGenerating) {
+        html += `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm shrink-0">N</div>
+            <div class="bg-white dark:bg-[#111928] border border-slate-200 dark:border-slate-800 rounded-3xl rounded-tl-md px-5 py-4 shadow-xs flex items-center gap-3">
+              <div class="dot-pulse flex gap-1"><span></span><span></span><span></span></div>
+              <span class="text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300">Menganalisis kritis &amp; memvalidasi jawaban...</span>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+      applyKaTeX(container);
+
+      const scrollArea = document.getElementById('chat-scroll-area');
+      scrollArea.scrollTop = scrollArea.scrollHeight;
+    }
+
+    // ==========================================
+    // 7. FLOATING EDGE PILL DOCK
+    // ==========================================
+    function toggleEdgeDockCollapse() {
+      const dock = document.getElementById('edge-pill-dock');
+      const chevron = document.getElementById('dock-chevron');
+      dock.classList.toggle('collapsed');
+      const isCollapsed = dock.classList.contains('collapsed');
+      chevron.innerHTML = isCollapsed ? ICONS.chevronLeft : ICONS.chevronRight;
+    }
+
+    function initEdgeDockDrag() {
+      const dock = document.getElementById('edge-pill-dock');
+      const handle = document.getElementById('dock-drag-handle');
+      let dragging = false;
+      let startY = 0;
+      let startTop = 0;
+
+      const onStart = (clientY) => {
+        dragging = true;
+        startY = clientY;
+        const rect = dock.getBoundingClientRect();
+        startTop = rect.top + rect.height / 2;
+        dock.style.transition = 'none';
+      };
+
+      const onMove = (clientY) => {
+        if (!dragging) return;
+        const deltaY = clientY - startY;
+        const minTop = 130;
+        const maxTop = window.innerHeight - 130;
+        const nextTop = Math.max(minTop, Math.min(maxTop, startTop + deltaY));
+        dock.style.top = `${nextTop}px`;
+      };
+
+      const onEnd = () => {
+        if (!dragging) return;
+        dragging = false;
+        dock.style.transition = '';
+      };
+
+      handle.addEventListener('mousedown', e => onStart(e.clientY));
+      window.addEventListener('mousemove', e => onMove(e.clientY));
+      window.addEventListener('mouseup', onEnd);
+
+      handle.addEventListener('touchstart', e => {
+        if (e.touches[0]) onStart(e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchmove', e => {
+        if (dragging && e.touches[0]) onMove(e.touches[0].clientY);
+      }, { passive: true });
+      window.addEventListener('touchend', onEnd);
+    }
+
+    // ==========================================
+    // 8. NALAR LENS & CIRCLE-TO-SEARCH POP-UP
+    // ==========================================
+    function openLensModal(initialMode = 'camera') {
+      const modal = document.getElementById('lens-modal');
+      modal.classList.remove('hidden');
+      document.getElementById('lens-mobile-guide').classList.add('hidden');
+
+      if (initialMode === 'camera') {
+        startLensCamera();
+      } else if (initialMode === 'screen') {
+        triggerScreenOrMobileHelp();
+      } else if (initialMode === 'circle' && !lensState.sourceImage) {
+        showToast('Pilih kamera, galeri, atau tempel screenshot untuk dilingkari.', 'crop');
+      }
+    }
+
+    function closeLensModal() {
+      stopLensStream();
+      document.getElementById('lens-modal').classList.add('hidden');
+    }
+
+    function stopLensStream() {
+      if (lensState.stream) {
+        lensState.stream.getTracks().forEach(t => t.stop());
+        lensState.stream = null;
+      }
+      const video = document.getElementById('lens-video');
+      if (video) video.srcObject = null;
+      document.getElementById('lens-video-wrapper').classList.add('hidden');
+    }
+
+    async function startLensCamera() {
+      stopLensStream();
+      document.getElementById('lens-mobile-guide').classList.add('hidden');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+          audio: false
+        });
+        lensState.stream = stream;
+        const video = document.getElementById('lens-video');
+        video.srcObject = stream;
+        document.getElementById('lens-video-wrapper').classList.remove('hidden');
+        document.getElementById('lens-canvas-wrapper').classList.add('hidden');
+        document.getElementById('lens-empty-state').classList.add('hidden');
+      } catch (err) {
+        showToast('Kamera tidak dapat diakses. Gunakan Foto Galeri atau Tempel Screenshot.', 'info');
+      }
+    }
+
+    async function triggerScreenOrMobileHelp() {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+      if (isMobile || !navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        stopLensStream();
+        document.getElementById('lens-mobile-guide').classList.remove('hidden');
+        showToast('Peramban HP membatasi tangkap layar penuh. Gunakan Tempel Screenshot / Kamera.', 'info');
+        return;
+      }
+
+      stopLensStream();
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        lensState.stream = stream;
+        const video = document.getElementById('lens-video');
+        video.srcObject = stream;
+        document.getElementById('lens-video-wrapper').classList.remove('hidden');
+        document.getElementById('lens-canvas-wrapper').classList.add('hidden');
+        document.getElementById('lens-empty-state').classList.add('hidden');
+      } catch (err) {
+        document.getElementById('lens-mobile-guide').classList.remove('hidden');
+      }
+    }
+
+    async function pasteScreenshotFromClipboard() {
+      try {
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+          throw new Error('Clipboard gambar tidak didukung browser ini.');
+        }
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imgType = item.types.find(t => t.startsWith('image/'));
+          if (imgType) {
+            const blob = await item.getType(imgType);
+            const url = URL.createObjectURL(blob);
+            loadImageIntoLensCanvas(url, true);
+            showToast('Screenshot dari clipboard berhasil ditempel!', 'clipboard');
+            return;
+          }
+        }
+        showToast('Tidak ada gambar di clipboard. Ambil screenshot lalu salin dulu.', 'info');
+      } catch (err) {
+        showToast('Izin clipboard dibatasi. Pilih lewat tombol Foto Galeri.', 'info');
+      }
+    }
+
+    function handleLensGalleryUpload(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      document.getElementById('lens-modal').classList.remove('hidden');
+      document.getElementById('lens-mobile-guide').classList.add('hidden');
+      const reader = new FileReader();
+      reader.onload = () => loadImageIntoLensCanvas(reader.result, false);
+      reader.readAsDataURL(file);
+      event.target.value = '';
+    }
+
+    function freezeLensFrame() {
+      const video = document.getElementById('lens-video');
+      if (!video || !video.videoWidth) return;
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = video.videoWidth;
+      tempCanvas.height = video.videoHeight;
+      tempCanvas.getContext('2d').drawImage(video, 0, 0);
+      const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.92);
+      stopLensStream();
+      loadImageIntoLensCanvas(dataUrl, false);
+    }
+
+    function loadImageIntoLensCanvas(src, revokeAfter) {
+      stopLensStream();
+      const img = new Image();
+      img.onload = () => {
+        lensState.sourceImage = img;
+        lensState.selection = null;
+        document.getElementById('lens-selection-box').classList.add('hidden');
+        document.getElementById('lens-empty-state').classList.add('hidden');
+        document.getElementById('lens-canvas-wrapper').classList.remove('hidden');
+
+        const canvas = document.getElementById('lens-canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext('2d').drawImage(img, 0, 0);
+
+        if (revokeAfter) URL.revokeObjectURL(src);
+      };
+      img.src = src;
+    }
+
+    function resetLensSelection() {
+      lensState.selection = null;
+      document.getElementById('lens-selection-box').classList.add('hidden');
+    }
+
+    function initLensCanvasGestures() {
+      const stage = document.getElementById('lens-stage');
+      const canvas = document.getElementById('lens-canvas');
+      const selBox = document.getElementById('lens-selection-box');
+
+      const getRelativeCoords = (clientX, clientY) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
+        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
+        return { x, y, rect };
+      };
+
+      const startDrag = (clientX, clientY) => {
+        if (!lensState.sourceImage) return;
+        const { x, y } = getRelativeCoords(clientX, clientY);
+        lensState.isDrawing = true;
+        lensState.startX = x;
+        lensState.startY = y;
+        selBox.classList.remove('hidden');
+        selBox.style.left = `${x}px`;
+        selBox.style.top = `${y}px`;
+        selBox.style.width = '0px';
+        selBox.style.height = '0px';
+      };
+
+      const moveDrag = (clientX, clientY) => {
+        if (!lensState.isDrawing) return;
+        const { x, y, rect } = getRelativeCoords(clientX, clientY);
+        const left = Math.min(lensState.startX, x);
+        const top = Math.min(lensState.startY, y);
+        const width = Math.abs(x - lensState.startX);
+        const height = Math.abs(y - lensState.startY);
+
+        selBox.style.left = `${left}px`;
+        selBox.style.top = `${top}px`;
+        selBox.style.width = `${width}px`;
+        selBox.style.height = `${height}px`;
+
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        lensState.selection = {
+          x: Math.round(left * scaleX),
+          y: Math.round(top * scaleY),
+          w: Math.round(width * scaleX),
+          h: Math.round(height * scaleY)
+        };
+      };
+
+      const endDrag = () => {
+        if (!lensState.isDrawing) return;
+        lensState.isDrawing = false;
+        if (lensState.selection && (lensState.selection.w < 15 || lensState.selection.h < 15)) {
+          resetLensSelection();
+        }
+      };
+
+      stage.addEventListener('mousedown', e => startDrag(e.clientX, e.clientY));
+      window.addEventListener('mousemove', e => moveDrag(e.clientX, e.clientY));
+      window.addEventListener('mouseup', endDrag);
+
+      stage.addEventListener('touchstart', e => {
+        if (e.touches[0]) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+      stage.addEventListener('touchmove', e => {
+        if (lensState.isDrawing && e.touches[0]) {
+          e.preventDefault();
+          moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+      }, { passive: false });
+      stage.addEventListener('touchend', endDrag);
+    }
+
+    function setLensActionMode(mode) {
+      lensState.actionMode = mode;
+      document.querySelectorAll('.lens-mode-btn').forEach(btn => {
+        const active = btn.getAttribute('data-lens-mode') === mode;
+        btn.className = active
+          ? 'lens-mode-btn py-2 px-2.5 rounded-xl bg-blue-600 text-white text-xs font-semibold text-center border border-blue-400'
+          : 'lens-mode-btn py-2 px-2.5 rounded-xl bg-slate-800 text-slate-300 text-xs font-medium text-center border border-slate-700';
+      });
+    }
+
+    function getCroppedLensDataUrl() {
+      const canvas = document.getElementById('lens-canvas');
+      if (!lensState.sourceImage) return null;
+      const sel = lensState.selection;
+      if (!sel || sel.w < 20 || sel.h < 20) {
+        return canvas.toDataURL('image/jpeg', 0.92);
+      }
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = sel.w;
+      cropCanvas.height = sel.h;
+      cropCanvas.getContext('2d').drawImage(canvas, sel.x, sel.y, sel.w, sel.h, 0, 0, sel.w, sel.h);
+      return cropCanvas.toDataURL('image/jpeg', 0.94);
+    }
+
+    async function analyzeLensSelection() {
+      const dataUrl = getCroppedLensDataUrl();
+      if (!dataUrl) {
+        showToast('Pilih foto atau tangkap gambar soal terlebih dahulu.', 'info');
+        return;
+      }
+
+      const btn = document.getElementById('lens-analyze-btn');
+      const resultCard = document.getElementById('lens-result-card');
+      const resultBody = document.getElementById('lens-result-body');
+      const extraNote = document.getElementById('lens-extra-prompt').value.trim();
+
+      const modeInstructions = {
+        solve: 'Transkripsikan soal pada area gambar yang dilingkari ini, lalu selesaikan langkah demi langkah secara kritis, teliti, dan pastikan jawaban akhirnya benar.',
+        ocr: 'Salin dan transkripsikan seluruh teks serta rumus matematika yang ada pada gambar ini secara rapi dan akurat.',
+        translate: 'Transkripsikan teks pada gambar ini lalu terjemahkan ke dalam Bahasa Indonesia yang alami dan akurat.',
+        explain: 'Jelaskan konsep, rumus, dan inti materi dari gambar ini secara mendalam namun mudah dipahami.'
+      };
+
+      const promptText = modeInstructions[lensState.actionMode] + (extraNote ? `\nCatatan tambahan pengguna: ${extraNote}` : '');
+
+      btn.disabled = true;
+      btn.innerHTML = `<span>Memindai &amp; Menganalisis...</span>`;
+      resultCard.classList.remove('hidden');
+      resultBody.innerHTML = `<p class="text-slate-500 text-xs">Sedang membaca area soal dengan Nalar Lens...</p>`;
+
+      try {
+        const base64 = dataUrl.split(',')[1];
+        const res = await callGeminiAPI({
+          parts: [
+            { text: promptText },
+            { inlineData: { mimeType: 'image/jpeg', data: base64 } }
+          ],
+          mode: lensState.actionMode === 'solve' ? 'critical' : 'fast',
+          category: state.category,
+          useSearch: false
+        });
+
+        lensState.lastResultText = res.answer;
+        resultBody.innerHTML = renderMarkdownSafe(res.answer);
+        applyKaTeX(resultBody);
+
+        const sess = getCurrentSession();
+        if (sess.messages.length === 0) {
+          sess.title = `[Nalar Lens] ${extraNote || 'Pindai Soal'}`;
+        }
+        sess.messages.push({
+          id: 'm_' + Date.now(),
+          role: 'user',
+          text: `[Nalar Lens — ${lensState.actionMode.toUpperCase()}] ${extraNote || 'Analisis gambar yang dilingkari'}`,
+          images: [dataUrl],
+          timestamp: Date.now()
+        });
+        sess.messages.push({
+          id: 'm_' + (Date.now() + 1),
+          role: 'assistant',
+          text: res.answer,
+          thinking: res.thinking,
+          sources: res.sources,
+          timestamp: Date.now()
+        });
+        sess.updatedAt = Date.now();
+        saveSessions();
+        renderChat();
+      } catch (err) {
+        resultBody.innerHTML = `<p class="text-rose-600 text-xs font-semibold">⚠️ ${escapeHtml(err.message)}</p>`;
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = `${ICONS.sparkles}<span>Analisis di Pop-Up</span>`;
+      }
+    }
+
+    function copyLensResult() {
+      if (!lensState.lastResultText) return;
+      navigator.clipboard.writeText(lensState.lastResultText).then(() => {
+        showToast('Hasil Nalar Lens disalin.', 'clipboard');
+      });
+    }
+
+    // ==========================================
+    // 9. STUDIO KONVERSI FILE (HTML->APK, ZIP->APK, IMAGE, DOCS)
+    // ==========================================
+    function openConverterModal(tab = 'html2apk') {
+      document.getElementById('converter-modal').classList.remove('hidden');
+      switchConverterTab(tab);
+    }
+
+    function closeConverterModal() {
+      document.getElementById('converter-modal').classList.add('hidden');
+    }
+
+    function switchConverterTab(tab) {
+      document.querySelectorAll('.conv-tab-btn').forEach(btn => {
+        const active = btn.getAttribute('data-conv-tab') === tab;
+        btn.className = active
+          ? 'conv-tab-btn px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-semibold'
+          : 'conv-tab-btn px-3 py-1.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-semibold';
+      });
+      ['html2apk', 'zip2apk', 'image', 'docs'].forEach(p => {
+        const el = document.getElementById(`conv-panel-${p}`);
+        if (el) el.classList.toggle('hidden', p !== tab);
+      });
+    }
+
+    function handleConvHtmlFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      document.getElementById('conv-html-filename').textContent = file.name;
+      const baseName = file.name.replace(/\.[^.]+$/, '');
+      document.getElementById('apk-app-name').value = baseName;
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('conv-html-source').value = reader.result;
+      };
+      reader.readAsText(file);
+    }
+
+    async function handleConvZipFile(event) {
+      const file = event.target.files?.[0];
+      if (!file || !window.JSZip) return;
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const allPaths = Object.keys(zip.files).filter(p => !zip.files[p].dir && !p.includes('__MACOSX'));
+        if (allPaths.length === 0) {
+          showToast('Arsip ZIP kosong.', 'info');
+          return;
+        }
+
+        // Strip common root folder if all files share one
+        const firstParts = allPaths.map(p => p.split('/')[0]);
+        const hasSingleRoot = allPaths.every(p => p.includes('/')) && new Set(firstParts).size === 1;
+        const rootPrefix = hasSingleRoot ? firstParts[0] + '/' : '';
+
+        convState.zipFilesMap = {};
+        const htmlCandidates = [];
+
+        for (const fullPath of allPaths) {
+          const relPath = hasSingleRoot ? fullPath.slice(rootPrefix.length) : fullPath;
+          if (!relPath) continue;
+          const bytes = await zip.files[fullPath].async('uint8array');
+          convState.zipFilesMap[relPath] = bytes;
+          if (relPath.toLowerCase().endsWith('.html') || relPath.toLowerCase().endsWith('.htm')) {
+            htmlCandidates.push(relPath);
+          }
+        }
+
+        if (htmlCandidates.length === 0) {
+          showToast('Tidak ditemukan file .html di dalam ZIP.', 'info');
+          return;
+        }
+
+        htmlCandidates.sort((a, b) => (a.toLowerCase() === 'index.html' ? -1 : b.toLowerCase() === 'index.html' ? 1 : a.length - b.length));
+        const selectEl = document.getElementById('conv-zip-entry-select');
+        selectEl.innerHTML = htmlCandidates.map(h => `<option value="${escapeHtml(h)}">${escapeHtml(h)}</option>`).join('');
+        document.getElementById('conv-zip-entry-box').classList.remove('hidden');
+        document.getElementById('conv-zip-summary').textContent = `${file.name} berhasil dimuat (${Object.keys(convState.zipFilesMap).length} file aset).`;
+        document.getElementById('zip-apk-app-name').value = file.name.replace(/\.zip$/i, '');
+      } catch (err) {
+        showToast('Gagal membaca ZIP: ' + err.message, 'info');
+      }
+    }
+
+    // Binary Android APK Builder (AXML + resources.arsc + Valid DEX + Web Crypto RSA-2048 X.509 v3)
+    function writeU16LE(arr, off, val) {
+      arr[off] = val & 0xff;
+      arr[off + 1] = (val >>> 8) & 0xff;
+    }
+    function writeU32LE(arr, off, val) {
+      arr[off] = val & 0xff;
+      arr[off + 1] = (val >>> 8) & 0xff;
+      arr[off + 2] = (val >>> 16) & 0xff;
+      arr[off + 3] = (val >>> 24) & 0xff;
+    }
+    function writeULEB128(out, val) {
+      do {
+        let b = val & 0x7f;
+        val >>>= 7;
+        if (val !== 0) b |= 0x80;
+        out.push(b);
+      } while (val !== 0);
+    }
+    function adler32(bytes, start = 0) {
+      let a = 1, b = 0;
+      for (let i = start; i < bytes.length; i++) {
+        a = (a + bytes[i]) % 65521;
+        b = (b + a) % 65521;
+      }
+      return ((b << 16) | a) >>> 0;
+    }
+
+    function buildStringPoolChunk(strings, resIds = []) {
+      const encoded = strings.map(s => {
+        const u16 = new Uint8Array(2 + s.length * 2 + 2);
+        writeU16LE(u16, 0, s.length);
+        for (let i = 0; i < s.length; i++) writeU16LE(u16, 2 + i * 2, s.charCodeAt(i));
+        return u16;
+      });
+      let strDataLen = 0;
+      const offsets = [];
+      encoded.forEach(buf => {
+        offsets.push(strDataLen);
+        strDataLen += buf.length;
+      });
+      const pad = (4 - (strDataLen % 4)) % 4;
+      const stringsStart = 28 + strings.length * 4;
+      const poolSize = stringsStart + strDataLen + pad;
+      const pool = new Uint8Array(poolSize);
+      writeU16LE(pool, 0, 0x0001);
+      writeU16LE(pool, 2, 28);
+      writeU32LE(pool, 4, poolSize);
+      writeU32LE(pool, 8, strings.length);
+      writeU32LE(pool, 12, 0);
+      writeU32LE(pool, 16, 0);
+      writeU32LE(pool, 20, stringsStart);
+      writeU32LE(pool, 24, 0);
+      offsets.forEach((o, idx) => writeU32LE(pool, 28 + idx * 4, o));
+      let pos = stringsStart;
+      encoded.forEach(buf => { pool.set(buf, pos); pos += buf.length; });
+
+      if (resIds.length === 0) return pool;
+      const resChunkSize = 8 + resIds.length * 4;
+      const combined = new Uint8Array(poolSize + resChunkSize);
+      combined.set(pool, 0);
+      writeU16LE(combined, poolSize, 0x0180);
+      writeU16LE(combined, poolSize + 2, 8);
+      writeU32LE(combined, poolSize + 4, resChunkSize);
+      resIds.forEach((id, i) => writeU32LE(combined, poolSize + 8 + i * 4, id));
+      return combined;
+    }
+
+    function buildBinaryManifest({ packageId, appName, versionName, orientation }) {
+      const orientVal = orientation === 'landscape' ? 0 : (orientation === 'portrait' ? 1 : -1);
+      // Resource IDs sorted ascending per Android ResXMLTree_attribute specification:
+      // 0x01010001 label, 0x01010003 name, 0x0101001e screenOrientation, 0x0101001f configChanges,
+      // 0x0101020c minSdkVersion, 0x0101021b versionCode, 0x0101021c versionName, 0x01010270 targetSdkVersion,
+      // 0x010104ec usesCleartextTraffic, 0x01010539 exported (or 0x01010010)
+      const resIdPairs = [
+        ['label', 0x01010001],
+        ['name', 0x01010003],
+        ['exported', 0x01010010],
+        ['screenOrientation', 0x0101001e],
+        ['configChanges', 0x0101001f],
+        ['minSdkVersion', 0x0101020c],
+        ['versionCode', 0x0101021b],
+        ['versionName', 0x0101021c],
+        ['targetSdkVersion', 0x01010270],
+        ['usesCleartextTraffic', 0x010104ec]
+      ];
+      const strings = resIdPairs.map(p => p[0]);
+      const resIds = resIdPairs.map(p => p[1]);
+
+      const extraStrings = [
+        'android',
+        'http://schemas.android.com/apk/res/android',
+        'manifest',
+        'package',
+        packageId,
+        versionName,
+        'uses-sdk',
+        'uses-permission',
+        'android.permission.INTERNET',
+        'application',
+        appName,
+        'activity',
+        `${packageId}.MainActivity`,
+        'intent-filter',
+        'action',
+        'android.intent.action.MAIN',
+        'category',
+        'android.intent.category.LAUNCHER'
+      ];
+      extraStrings.forEach(s => strings.push(s));
+      const idxOf = (s) => strings.indexOf(s);
+
+      const poolChunk = buildStringPoolChunk(strings, resIds);
+      const nsPrefix = idxOf('android');
+      const nsUri = idxOf('http://schemas.android.com/apk/res/android');
+
+      const chunks = [];
+      const pushNs = (type) => {
+        const b = new Uint8Array(24);
+        writeU16LE(b, 0, type);
+        writeU16LE(b, 2, 16);
+        writeU32LE(b, 4, 24);
+        writeU32LE(b, 8, 1);
+        writeU32LE(b, 12, 0xffffffff);
+        writeU32LE(b, 16, nsPrefix);
+        writeU32LE(b, 20, nsUri);
+        chunks.push(b);
+      };
+      const pushStart = (tagName, attrs) => {
+        // Sort attributes by resource ID ascending
+        attrs.sort((a, b) => {
+          const ra = a.ns === 0xffffffff ? 0xffffffff : resIds[a.name];
+          const rb = b.ns === 0xffffffff ? 0xffffffff : resIds[b.name];
+          return ra - rb;
+        });
+        const size = 36 + attrs.length * 20;
+        const b = new Uint8Array(size);
+        writeU16LE(b, 0, 0x0102);
+        writeU16LE(b, 2, 16);
+        writeU32LE(b, 4, size);
+        writeU32LE(b, 8, 1);
+        writeU32LE(b, 12, 0xffffffff);
+        writeU32LE(b, 16, 0xffffffff);
+        writeU32LE(b, 20, tagName);
+        writeU16LE(b, 24, 20);
+        writeU16LE(b, 26, 20);
+        writeU16LE(b, 28, attrs.length);
+        attrs.forEach((at, i) => {
+          const o = 36 + i * 20;
+          writeU32LE(b, o, at.ns);
+          writeU32LE(b, o + 4, at.name);
+          writeU32LE(b, o + 8, at.rawStr);
+          writeU16LE(b, o + 12, 8);
+          b[o + 14] = 0;
+          b[o + 15] = at.type;
+          writeU32LE(b, o + 16, at.data);
+        });
+        chunks.push(b);
+      };
+      const pushEnd = (tagName) => {
+        const b = new Uint8Array(24);
+        writeU16LE(b, 0, 0x0103);
+        writeU16LE(b, 2, 16);
+        writeU32LE(b, 4, 24);
+        writeU32LE(b, 8, 1);
+        writeU32LE(b, 12, 0xffffffff);
+        writeU32LE(b, 16, 0xffffffff);
+        writeU32LE(b, 20, tagName);
+        chunks.push(b);
+      };
+
+      pushNs(0x0100);
+      pushStart(idxOf('manifest'), [
+        { ns: nsUri, name: idxOf('versionCode'), rawStr: 0xffffffff, type: 0x10, data: 1 },
+        { ns: nsUri, name: idxOf('versionName'), rawStr: idxOf(versionName), type: 0x03, data: idxOf(versionName) },
+        { ns: 0xffffffff, name: idxOf('package'), rawStr: idxOf(packageId), type: 0x03, data: idxOf(packageId) }
+      ]);
+
+      pushStart(idxOf('uses-sdk'), [
+        { ns: nsUri, name: idxOf('minSdkVersion'), rawStr: 0xffffffff, type: 0x10, data: 21 },
+        { ns: nsUri, name: idxOf('targetSdkVersion'), rawStr: 0xffffffff, type: 0x10, data: 29 }
+      ]);
+      pushEnd(idxOf('uses-sdk'));
+
+      pushStart(idxOf('uses-permission'), [
+        { ns: nsUri, name: idxOf('name'), rawStr: idxOf('android.permission.INTERNET'), type: 0x03, data: idxOf('android.permission.INTERNET') }
+      ]);
+      pushEnd(idxOf('uses-permission'));
+
+      pushStart(idxOf('application'), [
+        { ns: nsUri, name: idxOf('label'), rawStr: idxOf(appName), type: 0x03, data: idxOf(appName) },
+        { ns: nsUri, name: idxOf('usesCleartextTraffic'), rawStr: 0xffffffff, type: 0x12, data: 0xffffffff }
+      ]);
+
+      pushStart(idxOf('activity'), [
+        { ns: nsUri, name: idxOf('name'), rawStr: idxOf(`${packageId}.MainActivity`), type: 0x03, data: idxOf(`${packageId}.MainActivity`) },
+        { ns: nsUri, name: idxOf('exported'), rawStr: 0xffffffff, type: 0x12, data: 0xffffffff },
+        { ns: nsUri, name: idxOf('screenOrientation'), rawStr: 0xffffffff, type: 0x10, data: orientVal >>> 0 },
+        { ns: nsUri, name: idxOf('configChanges'), rawStr: 0xffffffff, type: 0x11, data: 0x0480 }
+      ]);
+
+      pushStart(idxOf('intent-filter'), []);
+      pushStart(idxOf('action'), [
+        { ns: nsUri, name: idxOf('name'), rawStr: idxOf('android.intent.action.MAIN'), type: 0x03, data: idxOf('android.intent.action.MAIN') }
+      ]);
+      pushEnd(idxOf('action'));
+      pushStart(idxOf('category'), [
+        { ns: nsUri, name: idxOf('name'), rawStr: idxOf('android.intent.category.LAUNCHER'), type: 0x03, data: idxOf('android.intent.category.LAUNCHER') }
+      ]);
+      pushEnd(idxOf('category'));
+      pushEnd(idxOf('intent-filter'));
+
+      pushEnd(idxOf('activity'));
+      pushEnd(idxOf('application'));
+      pushEnd(idxOf('manifest'));
+      pushNs(0x0101);
+
+      const bodyLen = chunks.reduce((acc, c) => acc + c.length, 0);
+      const totalSize = 8 + poolChunk.length + bodyLen;
+      const out = new Uint8Array(totalSize);
+      writeU16LE(out, 0, 0x0003);
+      writeU16LE(out, 2, 8);
+      writeU32LE(out, 4, totalSize);
+      out.set(poolChunk, 8);
+      let pos = 8 + poolChunk.length;
+      chunks.forEach(c => { out.set(c, pos); pos += c.length; });
+      return out;
+    }
+
+    function buildMinimalResourcesArsc(packageId, appName) {
+      const valPool = buildStringPoolChunk([appName]);
+      const typePool = buildStringPoolChunk(['string']);
+      const keyPool = buildStringPoolChunk(['app_name']);
+
+      // ResTable_type (0x0201) with 1 entry (app_name -> string[0])
+      const typeHeaderSize = 68;
+      const entryOffsetArraySize = 4;
+      const entrySize = 16; // ResTable_entry (8) + Res_value (8)
+      const typeChunkSize = typeHeaderSize + entryOffsetArraySize + entrySize;
+      const typeChunk = new Uint8Array(typeChunkSize);
+      writeU16LE(typeChunk, 0, 0x0201);
+      writeU16LE(typeChunk, 2, typeHeaderSize);
+      writeU32LE(typeChunk, 4, typeChunkSize);
+      typeChunk[8] = 1; // id = 1 (string)
+      writeU32LE(typeChunk, 12, 1); // entryCount
+      writeU32LE(typeChunk, 16, typeHeaderSize + entryOffsetArraySize); // entriesStart
+      writeU32LE(typeChunk, 20, 48); // ResTable_config size = 48
+      writeU32LE(typeChunk, typeHeaderSize, 0); // offset[0] = 0
+      const eo = typeHeaderSize + entryOffsetArraySize;
+      writeU16LE(typeChunk, eo, 8); // entry size
+      writeU16LE(typeChunk, eo + 2, 0); // flags
+      writeU32LE(typeChunk, eo + 4, 0); // key index 0 ('app_name')
+      writeU16LE(typeChunk, eo + 8, 8); // Res_value size
+      typeChunk[eo + 10] = 0;
+      typeChunk[eo + 11] = 0x03; // TYPE_STRING
+      writeU32LE(typeChunk, eo + 12, 0); // string pool index 0
+
+      // ResTable_typeSpec (0x0202)
+      const specSize = 16 + 4;
+      const specChunk = new Uint8Array(specSize);
+      writeU16LE(specChunk, 0, 0x0202);
+      writeU16LE(specChunk, 2, 16);
+      writeU32LE(specChunk, 4, specSize);
+      specChunk[8] = 1;
+      writeU32LE(specChunk, 12, 1);
+
+      // ResTable_package (0x0200) header = 288 bytes
+      const pkgHeaderSize = 288;
+      const pkgSize = pkgHeaderSize + typePool.length + keyPool.length + specChunk.length + typeChunk.length;
+      const pkgChunk = new Uint8Array(pkgSize);
+      writeU16LE(pkgChunk, 0, 0x0200);
+      writeU16LE(pkgChunk, 2, pkgHeaderSize);
+      writeU32LE(pkgChunk, 4, pkgSize);
+      writeU32LE(pkgChunk, 8, 0x7f); // package id 0x7f
+      for (let i = 0; i < Math.min(127, packageId.length); i++) {
+        writeU16LE(pkgChunk, 12 + i * 2, packageId.charCodeAt(i));
+      }
+      writeU32LE(pkgChunk, 268, pkgHeaderSize); // typeStrings offset
+      writeU32LE(pkgChunk, 272, 1); // lastPublicType
+      writeU32LE(pkgChunk, 276, pkgHeaderSize + typePool.length); // keyStrings offset
+      writeU32LE(pkgChunk, 280, 1); // lastPublicKey
+
+      let p = pkgHeaderSize;
+      pkgChunk.set(typePool, p); p += typePool.length;
+      pkgChunk.set(keyPool, p); p += keyPool.length;
+      pkgChunk.set(specChunk, p); p += specChunk.length;
+      pkgChunk.set(typeChunk, p);
+
+      // ResTable_header (0x0002) = 12 bytes
+      const totalSize = 12 + valPool.length + pkgChunk.length;
+      const out = new Uint8Array(totalSize);
+      writeU16LE(out, 0, 0x0002);
+      writeU16LE(out, 2, 12);
+      writeU32LE(out, 4, totalSize);
+      writeU32LE(out, 8, 1); // packageCount
+      out.set(valPool, 12);
+      out.set(pkgChunk, 12 + valPool.length);
+      return out;
+    }
+
+    async function buildValidWebViewDex(packageId, entryHtmlName) {
+      const mainClassDesc = `L${packageId.replace(/\./g, '/')}/MainActivity;`;
+      const assetUrl = `file:///android_asset/www/${entryHtmlName}`;
+
+      // Sorted ASCII string table
+      const strings = [
+        '<init>',
+        'Landroid/app/Activity;',
+        'Landroid/os/Bundle;',
+        'Landroid/view/View;',
+        'Landroid/webkit/WebSettings;',
+        'Landroid/webkit/WebView;',
+        'Landroid/webkit/WebViewClient;',
+        mainClassDesc,
+        'V',
+        'VL',
+        'Z',
+        assetUrl,
+        'getSettings',
+        'loadUrl',
+        'onCreate',
+        'setContentView',
+        'setDomStorageEnabled',
+        'setJavaScriptEnabled',
+        'setWebViewClient'
+      ].sort();
+      const sIdx = (s) => strings.indexOf(s);
+
+      // Type IDs (sorted by string index)
+      const types = [
+        sIdx('Landroid/app/Activity;'),
+        sIdx('Landroid/os/Bundle;'),
+        sIdx('Landroid/view/View;'),
+        sIdx('Landroid/webkit/WebSettings;'),
+        sIdx('Landroid/webkit/WebView;'),
+        sIdx('Landroid/webkit/WebViewClient;'),
+        sIdx(mainClassDesc),
+        sIdx('V'),
+        sIdx('Z')
+      ];
+      const tIdx = (desc) => types.indexOf(sIdx(desc));
+
+      // Proto IDs:
+      // 0: ()Landroid/webkit/WebSettings;
+      // 1: ()V
+      // 2: (Landroid/os/Bundle;)V
+      // 3: (Landroid/view/View;)V
+      // 4: (Landroid/webkit/WebViewClient;)V
+      // 5: (Ljava/lang/String;)V -> add java/lang/String to strings & types!
+      return buildFullDexInternal(packageId, entryHtmlName);
+    }
+
+    async function buildFullDexInternal(packageId, entryHtmlName) {
+      const mainDesc = `L${packageId.replace(/\./g, '/')}/MainActivity;`;
+      const assetUrl = `file:///android_asset/www/${entryHtmlName}`;
+
+      const strings = [
+        '<init>',
+        'Landroid/app/Activity;',
+        'Landroid/os/Bundle;',
+        'Landroid/view/View;',
+        'Landroid/webkit/WebSettings;',
+        'Landroid/webkit/WebView;',
+        'Landroid/webkit/WebViewClient;',
+        mainDesc,
+        'Ljava/lang/String;',
+        'V',
+        'VL',
+        'VLL',
+        'VZ',
+        assetUrl,
+        'getSettings',
+        'loadUrl',
+        'onCreate',
+        'setContentView',
+        'setDomStorageEnabled',
+        'setJavaScriptEnabled',
+        'setWebViewClient'
+      ].sort();
+      const sIdx = (s) => strings.indexOf(s);
+
+      const types = [
+        sIdx('Landroid/app/Activity;'),
+        sIdx('Landroid/os/Bundle;'),
+        sIdx('Landroid/view/View;'),
+        sIdx('Landroid/webkit/WebSettings;'),
+        sIdx('Landroid/webkit/WebView;'),
+        sIdx('Landroid/webkit/WebViewClient;'),
+        sIdx(mainDesc),
+        sIdx('Ljava/lang/String;'),
+        sIdx('V'),
+        sIdx('Z')
+      ];
+      const tIdx = (d) => types.indexOf(sIdx(d));
+
+      // TypeLists:
+      // tl0: [Bundle]
+      // tl1: [View]
+      // tl2: [WebViewClient]
+      // tl3: [String]
+      // tl4: [Z]
+      // tl5: [Activity] (Context) -> WebView.<init>(Landroid/content/Context;)V
+      strings.push('Landroid/content/Context;');
+      strings.sort();
+      const sIdx2 = (s) => strings.indexOf(s);
+      const types2 = [
+        sIdx2('Landroid/app/Activity;'),
+        sIdx2('Landroid/content/Context;'),
+        sIdx2('Landroid/os/Bundle;'),
+        sIdx2('Landroid/view/View;'),
+        sIdx2('Landroid/webkit/WebSettings;'),
+        sIdx2('Landroid/webkit/WebView;'),
+        sIdx2('Landroid/webkit/WebViewClient;'),
+        sIdx2(mainDesc),
+        sIdx2('Ljava/lang/String;'),
+        sIdx2('V'),
+        sIdx2('Z')
+      ];
+      const t2 = (d) => types2.indexOf(sIdx2(d));
+
+      // Protos (sorted by return_type_idx, then param_type_list):
+      // p0: ()Landroid/webkit/WebSettings; (shorty='L', ret=WebSettings, params=0)
+      // p1: ()V (shorty='V', ret=V, params=0)
+      // p2: (Landroid/content/Context;)V (shorty='VL', ret=V, params=[Context])
+      // p3: (Landroid/os/Bundle;)V (shorty='VL', ret=V, params=[Bundle])
+      // p4: (Landroid/view/View;)V (shorty='VL', ret=V, params=[View])
+      // p5: (Landroid/webkit/WebViewClient;)V (shorty='VL', ret=V, params=[WebViewClient])
+      // p6: (Ljava/lang/String;)V (shorty='VL', ret=V, params=[String])
+      // p7: (Z)V (shorty='VZ', ret=V, params=[Z])
+      // Note: 'L' must be in strings!
+      strings.push('L');
+      strings.sort();
+      const si = (s) => strings.indexOf(s);
+      const tiList = [
+        si('Landroid/app/Activity;'),
+        si('Landroid/content/Context;'),
+        si('Landroid/os/Bundle;'),
+        si('Landroid/view/View;'),
+        si('Landroid/webkit/WebSettings;'),
+        si('Landroid/webkit/WebView;'),
+        si('Landroid/webkit/WebViewClient;'),
+        si(mainDesc),
+        si('Ljava/lang/String;'),
+        si('V'),
+        si('Z')
+      ];
+      const ti = (d) => tiList.indexOf(si(d));
+
+      // Methods (sorted by class_idx, name_idx, proto_idx):
+      // m0: Activity.<init>()V
+      // m1: Activity.onCreate(Bundle)V
+      // m2: Activity.setContentView(View)V
+      // m3: WebSettings.setDomStorageEnabled(Z)V
+      // m4: WebSettings.setJavaScriptEnabled(Z)V
+      // m5: WebView.<init>(Context)V
+      // m6: WebView.getSettings()WebSettings
+      // m7: WebView.loadUrl(String)V
+      // m8: WebView.setWebViewClient(WebViewClient)V
+      // m9: WebViewClient.<init>()V
+      // m10: MainActivity.<init>()V
+      // m11: MainActivity.onCreate(Bundle)V
+
+      const byteBuf = [];
+      const pushU16 = (v) => { byteBuf.push(v & 0xff, (v >>> 8) & 0xff); };
+      const pushU32 = (v) => { byteBuf.push(v & 0xff, (v >>> 8) & 0xff, (v >>> 16) & 0xff, (v >>> 24) & 0xff); };
+      const align4 = () => { while (byteBuf.length % 4 !== 0) byteBuf.push(0); };
+
+      // Reserve 112 bytes for header
+      for (let i = 0; i < 112; i++) byteBuf.push(0);
+
+      // 1. string_ids
+      const stringIdsOff = byteBuf.length;
+      for (let i = 0; i < strings.length; i++) pushU32(0);
+
+      // 2. type_ids
+      const typeIdsOff = byteBuf.length;
+      tiList.forEach(idx => pushU32(idx));
+
+      // 3. proto_ids (8 protos)
+      const protoIdsOff = byteBuf.length;
+      const protos = [
+        { shorty: si('L'), ret: ti('Landroid/webkit/WebSettings;'), params: [ti('Landroid/content/Context;')] }, // dummy param to ensure non-zero offset? No, 0 is valid in DEX spec!
+      ];
+      // Let's make protos clean & strictly ordered:
+      const protoDefs = [
+        { shorty: si('L'), ret: ti('Landroid/webkit/WebSettings;'), params: [] },
+        { shorty: si('V'), ret: ti('V'), params: [] },
+        { shorty: si('VL'), ret: ti('V'), params: [ti('Landroid/content/Context;')] },
+        { shorty: si('VL'), ret: ti('V'), params: [ti('Landroid/os/Bundle;')] },
+        { shorty: si('VL'), ret: ti('V'), params: [ti('Landroid/view/View;')] },
+        { shorty: si('VL'), ret: ti('V'), params: [ti('Landroid/webkit/WebViewClient;')] },
+        { shorty: si('VL'), ret: ti('V'), params: [ti('Ljava/lang/String;')] },
+        { shorty: si('VZ'), ret: ti('V'), params: [ti('Z')] }
+      ];
+      protoDefs.forEach(() => { pushU32(0); pushU32(0); pushU32(0); });
+
+      // 4. method_ids (12 methods)
+      const methodDefs = [
+        { cls: ti('Landroid/app/Activity;'), proto: 1, name: si('<init>') },
+        { cls: ti('Landroid/app/Activity;'), proto: 3, name: si('onCreate') },
+        { cls: ti('Landroid/app/Activity;'), proto: 4, name: si('setContentView') },
+        { cls: ti('Landroid/webkit/WebSettings;'), proto: 7, name: si('setDomStorageEnabled') },
+        { cls: ti('Landroid/webkit/WebSettings;'), proto: 7, name: si('setJavaScriptEnabled') },
+        { cls: ti('Landroid/webkit/WebView;'), proto: 2, name: si('<init>') },
+        { cls: ti('Landroid/webkit/WebView;'), proto: 0, name: si('getSettings') },
+        { cls: ti('Landroid/webkit/WebView;'), proto: 6, name: si('loadUrl') },
+        { cls: ti('Landroid/webkit/WebView;'), proto: 5, name: si('setWebViewClient') },
+        { cls: ti('Landroid/webkit/WebViewClient;'), proto: 1, name: si('<init>') },
+        { cls: ti(mainDesc), proto: 1, name: si('<init>') },
+        { cls: ti(mainDesc), proto: 3, name: si('onCreate') }
+      ];
+      const methodIdsOff = byteBuf.length;
+      methodDefs.forEach(m => { pushU16(m.cls); pushU16(m.proto); pushU32(m.name); });
+
+      // 5. class_defs (1 class: MainActivity)
+      const classDefsOff = byteBuf.length;
+      for (let i = 0; i < 32; i++) byteBuf.push(0);
+
+      // Data Section starts here
+      const dataOff = byteBuf.length;
+
+      // TypeLists for protos 2..7
+      const typeListOffsets = [];
+      for (let i = 2; i < protoDefs.length; i++) {
+        align4();
+        typeListOffsets[i] = byteBuf.length;
+        pushU32(1);
+        pushU16(protoDefs[i].params[0]);
+      }
+
+      // Code Item 0: MainActivity.<init>()V
+      // invoke-direct {v0}, Activity.<init>()V (m0) -> 70 10 00 00 00 00
+      // return-void -> 0e 00
+      align4();
+      const codeInitOff = byteBuf.length;
+      pushU16(1); // registers_size
+      pushU16(1); // ins_size
+      pushU16(1); // outs_size
+      pushU16(0); // tries_size
+      pushU32(0); // debug_info_off
+      pushU32(4); // insns_size (4 16-bit code units)
+      pushU16(0x1070); pushU16(0); pushU16(0);
+      pushU16(0x000e);
+
+      // Code Item 1: MainActivity.onCreate(Bundle)V
+      // registers: v0, v1, v2, v3 (this=v2, savedInstanceState=v3)
+      // 1. invoke-super {v2, v3}, Activity.onCreate (m1) [3 units]
+      // 2. new-instance v0, WebView (ti WebView) [2 units]
+      // 3. invoke-direct {v0, v2}, WebView.<init> (m5) [3 units]
+      // 4. invoke-virtual {v0}, WebView.getSettings (m6) [3 units]
+      // 5. move-result-object v1 [1 unit]
+      // 6. const/4 v3, 1 [1 unit]
+      // 7. invoke-virtual {v1, v3}, WebSettings.setJavaScriptEnabled (m4) [3 units]
+      // 8. invoke-virtual {v1, v3}, WebSettings.setDomStorageEnabled (m3) [3 units]
+      // 9. new-instance v1, WebViewClient (ti WebViewClient) [2 units]
+      // 10. invoke-direct {v1}, WebViewClient.<init> (m9) [3 units]
+      // 11. invoke-virtual {v0, v1}, WebView.setWebViewClient (m8) [3 units]
+      // 12. const-string v1, assetUrl (si assetUrl) [2 units]
+      // 13. invoke-virtual {v0, v1}, WebView.loadUrl (m7) [3 units]
+      // 14. invoke-virtual {v2, v0}, Activity.setContentView (m2) [3 units]
+      // 15. return-void [1 unit]
+      // Total = 36 16-bit units
+      align4();
+      const codeOnCreateOff = byteBuf.length;
+      pushU16(4); // registers_size
+      pushU16(2); // ins_size (this + Bundle)
+      pushU16(2); // outs_size
+      pushU16(0); // tries_size
+      pushU32(0); // debug_info_off
+      pushU32(36); // insns_size
+      pushU16(0x206f); pushU16(1); pushU16(0x0032);
+      pushU16(0x0022); pushU16(ti('Landroid/webkit/WebView;'));
+      pushU16(0x2070); pushU16(5); pushU16(0x0020);
+      pushU16(0x106e); pushU16(6); pushU16(0x0000);
+      pushU16(0x010c);
+      pushU16(0x1312);
+      pushU16(0x206e); pushU16(4); pushU16(0x0031);
+      pushU16(0x206e); pushU16(3); pushU16(0x0031);
+      pushU16(0x0122); pushU16(ti('Landroid/webkit/WebViewClient;'));
+      pushU16(0x1070); pushU16(9); pushU16(0x0001);
+      pushU16(0x206e); pushU16(8); pushU16(0x0010);
+      pushU16(0x011a); pushU16(si(assetUrl));
+      pushU16(0x206e); pushU16(7); pushU16(0x0010);
+      pushU16(0x206e); pushU16(2); pushU16(0x0002);
+      pushU16(0x000e);
+
+      // class_data_item
+      const classDataOff = byteBuf.length;
+      writeULEB128(byteBuf, 0); // static_fields_size
+      writeULEB128(byteBuf, 0); // instance_fields_size
+      writeULEB128(byteBuf, 2); // direct_methods_size (<init>) - wait: onCreate is virtual!
+      // Fix: direct_methods_size = 1 (<init>), virtual_methods_size = 1 (onCreate)
+      byteBuf.length = classDataOff;
+      writeULEB128(byteBuf, 0);
+      writeULEB128(byteBuf, 0);
+      writeULEB128(byteBuf, 1); // direct_methods_size = 1
+      writeULEB128(byteBuf, 1); // virtual_methods_size = 1
+      // direct method 0: method_idx_diff = 10, access_flags = 0x10001 (PUBLIC | CONSTRUCTOR), code_off
+      writeULEB128(byteBuf, 10);
+      writeULEB128(byteBuf, 0x10001);
+      writeULEB128(byteBuf, codeInitOff);
+      // virtual method 0: method_idx_diff = 11, access_flags = 0x0001 (PUBLIC), code_off
+      writeULEB128(byteBuf, 11);
+      writeULEB128(byteBuf, 0x0001);
+      writeULEB128(byteBuf, codeOnCreateOff);
+
+      // string_data_items
+      const strDataOffsets = [];
+      strings.forEach(str => {
+        strDataOffsets.push(byteBuf.length);
+        writeULEB128(byteBuf, str.length);
+        for (let i = 0; i < str.length; i++) byteBuf.push(str.charCodeAt(i));
+        byteBuf.push(0);
+      });
+
+      // map_list
+      align4();
+      const mapOff = byteBuf.length;
+      const mapItems = [
+        { type: 0x0000, size: 1, off: 0 },
+        { type: 0x0001, size: strings.length, off: stringIdsOff },
+        { type: 0x0002, size: tiList.length, off: typeIdsOff },
+        { type: 0x0003, size: protoDefs.length, off: protoIdsOff },
+        { type: 0x0005, size: methodDefs.length, off: methodIdsOff },
+        { type: 0x0006, size: 1, off: classDefsOff },
+        { type: 0x1001, size: 6, off: typeListOffsets[2] },
+        { type: 0x2001, size: 2, off: codeInitOff },
+        { type: 0x2000, size: 1, off: classDataOff },
+        { type: 0x2002, size: strings.length, off: strDataOffsets[0] },
+        { type: 0x1000, size: 1, off: mapOff }
+      ];
+      pushU32(mapItems.length);
+      mapItems.forEach(it => { pushU16(it.type); pushU16(0); pushU32(it.size); pushU32(it.off); });
+
+      const dex = new Uint8Array(byteBuf);
+      // Fill string_ids
+      strDataOffsets.forEach((o, i) => writeU32LE(dex, stringIdsOff + i * 4, o));
+      // Fill proto_ids
+      protoDefs.forEach((p, i) => {
+        const o = protoIdsOff + i * 12;
+        writeU32LE(dex, o, p.shorty);
+        writeU32LE(dex, o + 4, p.ret);
+        writeU32LE(dex, o + 8, i >= 2 ? typeListOffsets[i] : 0);
+      });
+      // Fill class_defs
+      writeU32LE(dex, classDefsOff, ti(mainDesc));
+      writeU32LE(dex, classDefsOff + 4, 0x0001); // PUBLIC
+      writeU32LE(dex, classDefsOff + 8, ti('Landroid/app/Activity;'));
+      writeU32LE(dex, classDefsOff + 12, 0);
+      writeU32LE(dex, classDefsOff + 16, 0xffffffff);
+      writeU32LE(dex, classDefsOff + 20, 0);
+      writeU32LE(dex, classDefsOff + 24, classDataOff);
+      writeU32LE(dex, classDefsOff + 28, 0);
+
+      // Header magic "dex\n035\0"
+      const magic = [0x64, 0x65, 0x78, 0x0a, 0x30, 0x33, 0x35, 0x00];
+      dex.set(magic, 0);
+      writeU32LE(dex, 32, dex.length); // file_size
+      writeU32LE(dex, 36, 112); // header_size
+      writeU32LE(dex, 40, 0x12345678); // endian_tag
+      writeU32LE(dex, 52, mapOff); // map_off
+      writeU32LE(dex, 56, strings.length);
+      writeU32LE(dex, 60, stringIdsOff);
+      writeU32LE(dex, 64, tiList.length);
+      writeU32LE(dex, 68, typeIdsOff);
+      writeU32LE(dex, 72, protoDefs.length);
+      writeU32LE(dex, 76, protoIdsOff);
+      writeU32LE(dex, 88, methodDefs.length);
+      writeU32LE(dex, 92, methodIdsOff);
+      writeU32LE(dex, 96, 1);
+      writeU32LE(dex, 100, classDefsOff);
+      writeU32LE(dex, 104, dex.length - dataOff);
+      writeU32LE(dex, 108, dataOff);
+
+      // SHA-1 signature at offset 12..32 (covers bytes 32..end)
+      const sha1Buf = await crypto.subtle.digest('SHA-1', dex.slice(32));
+      dex.set(new Uint8Array(sha1Buf), 12);
+      // Adler-32 checksum at offset 8..12 (covers bytes 12..end)
+      writeU32LE(dex, 8, adler32(dex, 12));
+      return dex;
+    }
+
+    // Minimal ASN.1 DER & PKCS#7 / CMS SignedData builder using Web Crypto RSA-2048
+    function derLen(len) {
+      if (len < 128) return [len];
+      if (len < 256) return [0x81, len];
+      return [0x82, (len >>> 8) & 0xff, len & 0xff];
+    }
+    function derWrap(tag, content) {
+      const lenBytes = derLen(content.length);
+      const out = new Uint8Array(1 + lenBytes.length + content.length);
+      out[0] = tag;
+      out.set(lenBytes, 1);
+      out.set(content, 1 + lenBytes.length);
+      return out;
+    }
+    function derConcat(...arrays) {
+      const total = arrays.reduce((s, a) => s + a.length, 0);
+      const out = new Uint8Array(total);
+      let p = 0;
+      arrays.forEach(a => { out.set(a, p); p += a.length; });
+      return out;
+    }
+
+    async function generateSignedCertRsa(certSfBytes) {
+      const keyPair = await crypto.subtle.generateKey(
+        { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+        true,
+        ['sign', 'verify']
+      );
+      const spki = new Uint8Array(await crypto.subtle.exportKey('spki', keyPair.publicKey));
+
+      // Build self-signed X.509 v3 TBSCertificate
+      const version = derWrap(0xa0, new Uint8Array([0x02, 0x01, 0x02]));
+      const serial = new Uint8Array([0x02, 0x04, 0x1a, 0x2b, 0x3c, 0x4d]);
+      // sha256WithRSAEncryption OID: 1.2.840.113549.1.1.11
+      const algId = derWrap(0x30, new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x0b, 0x05, 0x00]));
+      // CN=NalarAI
+      const cnAttr = derWrap(0x30, derConcat(
+        new Uint8Array([0x06, 0x03, 0x55, 0x04, 0x03]),
+        derWrap(0x0c, new TextEncoder().encode('NalarAI'))
+      ));
+      const dn = derWrap(0x30, derWrap(0x31, cnAttr));
+      const validity = derWrap(0x30, derConcat(
+        derWrap(0x17, new TextEncoder().encode('250101000000Z')),
+        derWrap(0x17, new TextEncoder().encode('500101000000Z'))
+      ));
+      const tbsCert = derWrap(0x30, derConcat(version, serial, algId, dn, validity, dn, spki));
+      const certSig = new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', keyPair.privateKey, tbsCert));
+      const certBitStr = derWrap(0x03, derConcat(new Uint8Array([0x00]), certSig));
+      const x509Cert = derWrap(0x30, derConcat(tbsCert, algId, certBitStr));
+
+      // Sign CERT.SF
+      const sfSig = new Uint8Array(await crypto.subtle.sign('RSASSA-PKCS1-v1_5', keyPair.privateKey, certSfBytes));
+
+      // PKCS#7 ContentInfo -> SignedData
+      const sha256Alg = derWrap(0x30, new Uint8Array([0x06, 0x09, 0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x02, 0x01, 0x05, 0x00]));
+      const rsaEncAlg = derWrap(0x30, new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x01, 0x01, 0x05, 0x00]));
+      const dataOid = new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x01]);
+      const signedDataOid = new Uint8Array([0x06, 0x09, 0x2a, 0x86, 0x48, 0x86, 0xf7, 0x0d, 0x01, 0x07, 0x02]);
+
+      const signerInfo = derWrap(0x30, derConcat(
+        new Uint8Array([0x02, 0x01, 0x01]),
+        derWrap(0x30, derConcat(dn, serial)),
+        sha256Alg,
+        rsaEncAlg,
+        derWrap(0x04, sfSig)
+      ));
+
+      const signedData = derWrap(0x30, derConcat(
+        new Uint8Array([0x02, 0x01, 0x01]),
+        derWrap(0x31, sha256Alg),
+        derWrap(0x30, dataOid),
+        derWrap(0xa0, x509Cert),
+        derWrap(0x31, signerInfo)
+      ));
+
+      return derWrap(0x30, derConcat(signedDataOid, derWrap(0xa0, signedData)));
+    }
+
+    async function sha256Base64(bytes) {
+      const buf = await crypto.subtle.digest('SHA-256', bytes);
+      let bin = '';
+      new Uint8Array(buf).forEach(b => bin += String.fromCharCode(b));
+      return btoa(bin);
+    }
+
+    async function assembleAndDownloadApk({ appName, packageId, versionName, orientation, wwwFiles, entryHtml }) {
+      if (!window.JSZip) throw new Error('JSZip tidak tersedia.');
+      showToast('Merakit paket installer Android (.APK)...', 'smartphone');
+
+      const manifestBytes = buildBinaryManifest({ packageId, appName, versionName, orientation });
+      const arscBytes = buildMinimalResourcesArsc(packageId, appName);
+      const dexBytes = await buildFullDexInternal(packageId, entryHtml);
+
+      const apkZip = new JSZip();
+      apkZip.file('AndroidManifest.xml', manifestBytes, { compression: 'DEFLATE' });
+      apkZip.file('resources.arsc', arscBytes, { compression: 'STORE' });
+      apkZip.file('classes.dex', dexBytes, { compression: 'DEFLATE' });
+
+      const allEntries = {
+        'AndroidManifest.xml': manifestBytes,
+        'resources.arsc': arscBytes,
+        'classes.dex': dexBytes
+      };
+
+      for (const [relPath, bytes] of Object.entries(wwwFiles)) {
+        const assetPath = `assets/www/${relPath}`;
+        apkZip.file(assetPath, bytes, { compression: 'DEFLATE' });
+        allEntries[assetPath] = bytes;
+      }
+
+      // Generate META-INF/MANIFEST.MF and CERT.SF
+      let manifestMf = 'Manifest-Version: 1.0\r\nCreated-By: NalarAI APK Builder\r\n\r\n';
+      for (const [name, bytes] of Object.entries(allEntries)) {
+        const digest = await sha256Base64(bytes);
+        manifestMf += `Name: ${name}\r\nSHA-256-Digest: ${digest}\r\n\r\n`;
+      }
+      const mfBytes = new TextEncoder().encode(manifestMf);
+      const mfDigest = await sha256Base64(mfBytes);
+
+      let certSf = `Signature-Version: 1.0\r\nCreated-By: NalarAI APK Builder\r\nSHA-256-Digest-Manifest: ${mfDigest}\r\n\r\n`;
+      for (const [name, bytes] of Object.entries(allEntries)) {
+        const digest = await sha256Base64(bytes);
+        const sectionBytes = new TextEncoder().encode(`Name: ${name}\r\nSHA-256-Digest: ${digest}\r\n\r\n`);
+        const secDigest = await sha256Base64(sectionBytes);
+        certSf += `Name: ${name}\r\nSHA-256-Digest: ${secDigest}\r\n\r\n`;
+      }
+      const sfBytes = new TextEncoder().encode(certSf);
+      const certRsaBytes = await generateSignedCertRsa(sfBytes);
+
+      apkZip.file('META-INF/MANIFEST.MF', mfBytes);
+      apkZip.file('META-INF/CERT.SF', sfBytes);
+      apkZip.file('META-INF/CERT.RSA', certRsaBytes);
+
+      const apkBlob = await apkZip.generateAsync({ type: 'blob', mimeType: 'application/vnd.android.package-archive' });
+      const safeName = appName.replace(/[^a-zA-Z0-9_-]/g, '_') || 'AplikasiKu';
+      const url = URL.createObjectURL(apkBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeName}.apk`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`${safeName}.apk berhasil dibuat & diunduh!`, 'shieldCheck');
+    }
+
+    async function buildNativeApkFromHtml() {
+      const htmlSrc = document.getElementById('conv-html-source').value.trim();
+      if (!htmlSrc) {
+        showToast('Masukkan kode HTML atau pilih file .html terlebih dahulu.', 'info');
+        return;
+      }
+      const appName = document.getElementById('apk-app-name').value.trim() || 'AplikasiKu';
+      const packageId = document.getElementById('apk-package-id').value.trim() || 'com.nalarai.webapp';
+      const versionName = document.getElementById('apk-version-name').value.trim() || '1.0.0';
+      const orientation = document.getElementById('apk-orientation').value;
+
+      await assembleAndDownloadApk({
+        appName,
+        packageId,
+        versionName,
+        orientation,
+        wwwFiles: { 'index.html': new TextEncoder().encode(htmlSrc) },
+        entryHtml: 'index.html'
+      });
+    }
+
+    async function buildNativeApkFromZip() {
+      const keys = Object.keys(convState.zipFilesMap);
+      if (keys.length === 0) {
+        showToast('Pilih file proyek .ZIP terlebih dahulu.', 'info');
+        return;
+      }
+      const appName = document.getElementById('zip-apk-app-name').value.trim() || 'ProyekWebApp';
+      const packageId = document.getElementById('zip-apk-package-id').value.trim() || 'com.nalarai.zipapp';
+      const entryHtml = document.getElementById('conv-zip-entry-select').value || 'index.html';
+
+      await assembleAndDownloadApk({
+        appName,
+        packageId,
+        versionName: '1.0.0',
+        orientation: 'unspecified',
+        wwwFiles: convState.zipFilesMap,
+        entryHtml
+      });
+    }
+
+    async function exportAndroidSourceZipFromHtml() {
+      const htmlSrc = document.getElementById('conv-html-source').value.trim();
+      if (!htmlSrc || !window.JSZip) {
+        showToast('Masukkan kode HTML terlebih dahulu.', 'info');
+        return;
+      }
+      const appName = document.getElementById('apk-app-name').value.trim() || 'AplikasiKu';
+      const pkg = document.getElementById('apk-package-id').value.trim() || 'com.nalarai.webapp';
+      const pkgPath = pkg.replace(/\./g, '/');
+
+      const zip = new JSZip();
+      zip.file('app/src/main/assets/www/index.html', htmlSrc);
+      zip.file('app/src/main/AndroidManifest.xml', `<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="${pkg}">
+  <uses-permission android:name="android.permission.INTERNET" />
+  <application android:label="${appName}" android:usesCleartextTraffic="true">
+    <activity android:name=".MainActivity" android:exported="true">
+      <intent-filter>
+        <action android:name="android.intent.action.MAIN" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
+  </application>
+</manifest>`);
+      zip.file(`app/src/main/java/${pkgPath}/MainActivity.java`, `package ${pkg};
+import android.app.Activity;
+import android.os.Bundle;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+public class MainActivity extends Activity {
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    WebView wv = new WebView(this);
+    WebSettings ws = wv.getSettings();
+    ws.setJavaScriptEnabled(true);
+    ws.setDomStorageEnabled(true);
+    wv.setWebViewClient(new WebViewClient());
+    wv.loadUrl("file:///android_asset/www/index.html");
+    setContentView(wv);
+  }
+}`);
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${appName.replace(/[^a-zA-Z0-9_-]/g, '_')}_AndroidProject.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('Proyek Android Studio (.ZIP) diunduh.', 'download');
+    }
+
+    // Image Converter
+    function handleConvImageSelect(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+      convState.selectedImageFile = file;
+      document.getElementById('conv-img-info').textContent = `File terpilih: ${file.name} (${(file.size / 1024).toFixed(1)} KB)`;
+    }
+
+    function convertAndDownloadImage() {
+      const file = convState.selectedImageFile;
+      if (!file) {
+        showToast('Pilih gambar terlebih dahulu.', 'info');
+        return;
+      }
+      const mime = document.getElementById('conv-img-format').value;
+      const quality = parseInt(document.getElementById('conv-img-quality').value, 10) / 100;
+      const ext = mime === 'image/png' ? 'png' : (mime === 'image/webp' ? 'webp' : 'jpg');
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          canvas.getContext('2d').drawImage(img, 0, 0);
+          canvas.toBlob((blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${file.name.replace(/\.[^.]+$/, '')}.${ext}`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast(`Gambar berhasil dikonversi ke .${ext.toUpperCase()}`, 'download');
+          }, mime, quality);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Docs & Data Converter
+    function convertDocAction(type) {
+      const raw = document.getElementById('conv-doc-input').value.trim();
+      if (!raw) {
+        showToast('Tempel teks/data terlebih dahulu.', 'info');
+        return;
+      }
+      if (type === 'md2html') {
+        const bodyHtml = window.marked ? marked.parse(raw) : `<pre>${escapeHtml(raw)}</pre>`;
+        const docHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Dokumen</title><style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.7;padding:0 1rem;}</style></head><body>${bodyHtml}</body></html>`;
+        downloadTextBlob(docHtml, 'dokumen.html', 'text/html');
+      } else if (type === 'md2pdf') {
+        const bodyHtml = window.marked ? marked.parse(raw) : `<pre>${escapeHtml(raw)}</pre>`;
+        const win = window.open('', '_blank');
+        if (win) {
+          win.document.write(`<!DOCTYPE html><html><head><title>Cetak PDF</title><style>body{font-family:sans-serif;max-width:800px;margin:2rem auto;line-height:1.7;}</style></head><body>${bodyHtml}</body></html>`);
+          win.document.close();
+          win.print();
+        }
+      } else if (type === 'json2csv') {
+        try {
+          const arr = JSON.parse(raw);
+          if (!Array.isArray(arr) || arr.length === 0) throw new Error('Harus berupa array objek JSON');
+          const headers = Object.keys(arr[0]);
+          const csvRows = [headers.join(',')];
+          arr.forEach(row => {
+            csvRows.push(headers.map(h => JSON.stringify(row[h] ?? '')).join(','));
+          });
+          downloadTextBlob(csvRows.join('\n'), 'data.csv', 'text/csv');
+        } catch (e) {
+          showToast('Format JSON tidak valid: ' + e.message, 'info');
+        }
+      } else if (type === 'csv2json') {
+        const lines = raw.split(/\r?\n/).filter(Boolean);
+        if (lines.length < 2) {
+          showToast('CSV minimal memiliki header dan 1 baris data.', 'info');
+          return;
+        }
+        const headers = lines[0].split(',').map(s => s.trim());
+        const jsonArr = lines.slice(1).map(line => {
+          const vals = line.split(',');
+          const obj = {};
+          headers.forEach((h, i) => obj[h] = (vals[i] || '').trim());
+          return obj;
+        });
+        downloadTextBlob(JSON.stringify(jsonArr, null, 2), 'data.json', 'application/json');
+      }
+    }
+
+    function downloadTextBlob(content, filename, mime) {
+      const blob = new Blob([content], { type: `${mime};charset=utf-8` });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`File ${filename} diunduh.`, 'download');
+    }
+
+    // ==========================================
+    // 10. INITIALIZE APP & PAGE CLOSE PERSISTENCE
+    // ==========================================
+    async function initApp() {
+      initTheme();
+      hydrateIcons();
+      loadSettings();
+      await requestPersistentStorage();
+      await loadSessions();
+      initEdgeDockDrag();
+      initLensCanvasGestures();
+
+      // Auto-flush persistence on close/hide
+      window.addEventListener('pagehide', () => saveSessions());
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden') saveSessions();
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
